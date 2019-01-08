@@ -2,14 +2,22 @@ const mongoose = require('mongoose');
 const { Helper } = require('casbin');
 const CasbinRule = require('./model');
 
+/**
+ * Implements a policy adapter for casbin with MongoDB support.
+ *
+ * @class
+ */
 class MongooseAdapter {
   /**
    * Creates a new instance of mongoose adapter for casbin.
+   * It does not wait for successfull connection to MongoDB.
+   * So, if you want to have a possibility to wait until connection successful, use newAdapter.
    *
    * @param {String} uri Mongo URI where casbin rules must be persisted
    * @param {Object} [options={}] Additional options to pass on to mongoose client
    * @example
-   * const adapter = new MongoAdapter('MONGO_URI');
+   * const adapter = new MongooseAdapter('MONGO_URI');
+   * const adapter = new MongooseAdapter('MONGO_URI', { mongoose_options: 'here' })
    */
   constructor (uri, options = {}) {
     if (!uri || typeof uri !== 'string') {
@@ -20,13 +28,16 @@ class MongooseAdapter {
   }
 
   /**
-   * Creates a new instance of Mongo adapter for casbin.
+   * Creates a new instance of mongoose adapter for casbin.
+   * Instead of constructor, it does wait for successfull connection to MongoDB.
+   * Preferable way to construct an adapter instance, is to use this static method.
    *
    * @static
    * @param {String} uri Mongo URI where casbin rules must be persisted
    * @param {Object} [options={}] Additional options to pass on to mongoose client
    * @example
-   * const adapter = new MongoAdapter('MONGO_URI');
+   * const adapter = await MongooseAdapter.newAdapter('MONGO_URI');
+   * const adapter = await MongooseAdapter.newAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
   static async newAdapter (uri, options = {}) {
     const adapter = new MongooseAdapter(uri, options);
