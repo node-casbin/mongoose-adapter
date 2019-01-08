@@ -1,0 +1,28 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: node:10-alpine
+      - image: mongo:4
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run:
+          name: Installing Dependencies
+          command: npm install
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: Running Lint Checks
+          command: npm run lint
+      - run:
+          name: Running Tests
+          command: npm run test
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build

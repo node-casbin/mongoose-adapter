@@ -1,0 +1,17 @@
+{
+  "extends": "standard",
+  "rules": {
+    "semi": [
+      "error",
+      "always"
+    ],
+    "camelcase": [
+      "error",
+      {
+        "allow": [
+          "p_type"
+        ]
+      }
+    ]
+  }
+}
