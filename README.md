@@ -10,7 +10,7 @@ Install the package as dependency in your project:
 npm install --save @elastic.io/casbin-mongoose-adapter
 ```
 
-Require it in a place, where you are instantiating an enforcer:
+Require it in a place, where you are instantiating an enforcer ([read more about enforcer here](https://github.com/casbin/node-casbin#get-started)):
 
 ```javascript
 const MongooseAdapter = require('@elastic.io/casbin-mongoose-adapter');
@@ -21,6 +21,9 @@ async function initEnforcer() {
   const enforcer = await Enforcer.newEnforcer(model, adapter);
 }
 ```
+
+That is all what required for integrating the adapter into casbin.
+Casbin itself calls adapter methods to persist updates you made through it.
 
 ## Configuration
 
