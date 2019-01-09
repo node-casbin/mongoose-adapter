@@ -28,6 +28,7 @@
     "orm"
   ],
   "scripts": {
+    "docs": "jsdoc2md \"src/**/*.js\" > ./API.md",
     "lint": "eslint .",
     "prepublishOnly": "npm run lint && npm run test",
     "test:integration": "mocha --opts test/integration/mocha.opts",
@@ -41,6 +42,7 @@
     "eslint-plugin-node": "8.0.1",
     "eslint-plugin-promise": "4.0.1",
     "eslint-plugin-standard": "4.0.0",
+    "jsdoc-to-markdown": "4.0.1",
     "mocha": "5.2.0"
   },
   "dependencies": {
