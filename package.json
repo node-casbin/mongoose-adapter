@@ -9,11 +9,13 @@
     "name": "elastic.io GmbH",
     "url": "https://elastic.io"
   },
-  "contributors": [{
-    "name": "Eugene Obrezkov",
-    "email": "ghaiklor@gmail.com",
-    "url": "https://ghaiklor.com"
-  }],
+  "contributors": [
+    {
+      "name": "Eugene Obrezkov",
+      "email": "ghaiklor@gmail.com",
+      "url": "https://ghaiklor.com"
+    }
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/elasticio/casbin-mongoose-adapter.git"
@@ -47,8 +49,9 @@
     "docs": "jsdoc2md \"src/**/*.js\" > ./API.md",
     "lint": "eslint .",
     "prepublishOnly": "npm run lint && npm run test && npm run docs",
-    "test:integration": "mocha --opts test/integration/mocha.opts",
-    "test": "npm run test:integration"
+    "test:unit": "isparta cover _mocha -- --opts test/unit/mocha.opts",
+    "test:integration": "isparta cover _mocha -- --opts test/integration/mocha.opts",
+    "test": "npm run test:unit && npm run test:integration"
   },
   "devDependencies": {
     "chai": "4.2.0",
@@ -58,6 +61,7 @@
     "eslint-plugin-node": "8.0.1",
     "eslint-plugin-promise": "4.0.1",
     "eslint-plugin-standard": "4.0.0",
+    "isparta": "4.1.1",
     "jsdoc-to-markdown": "4.0.1",
     "mocha": "5.2.0"
   },
