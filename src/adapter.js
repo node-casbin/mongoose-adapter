@@ -24,6 +24,9 @@ class MongooseAdapter {
       throw new Error('You must provide Mongo URI to connect to!');
     }
 
+    // by default, adapter is not filtered
+    this.isFiltered = false;
+
     mongoose.connect(uri, options);
   }
 
@@ -42,7 +45,36 @@ class MongooseAdapter {
   static async newAdapter (uri, options = {}) {
     const adapter = new MongooseAdapter(uri, options);
     await new Promise(resolve => mongoose.connection.once('connected', resolve));
+
     return adapter;
+  }
+
+  /**
+   * Creates a new instance of mongoose adapter for casbin.
+   * It does the same as newAdapter, but it also sets a flag that this adapter is in filtered state.
+   *
+   * @static
+   * @param {String} uri Mongo URI where casbin rules must be persisted
+   * @param {Object} [options={}] Additional options to pass on to mongoose client
+   * @example
+   * const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI');
+   * const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI', { mongoose_options: 'here' });
+   */
+  static async newFilteredAdapter (uri, options = {}) {
+    const adapter = await MongooseAdapter.newAdapter(uri, options);
+    adapter.setFiltered(true);
+
+    return adapter;
+  }
+
+  /**
+   * Switch adapter to (non)filtered state.
+   * Casbin uses this flag to determine if it should load the whole policy from DB or not.
+   *
+   * @param {Boolean} isFiltered Flag that represents the current state of adapter
+   */
+  setFiltered (isFiltered = true) {
+    this.isFiltered = isFiltered;
   }
 
   /**
@@ -89,7 +121,7 @@ class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async loadPolicy (model) {
-    return this.loadFilteredPolicy(model, {});
+    return this.loadFilteredPolicy(model);
   }
 
   /**
@@ -98,9 +130,14 @@ class MongooseAdapter {
    * @param {Model} model Enforcer model
    * @param {Object} filter MongoDB filter to query
    */
-  async loadFilteredPolicy (model, filter = {}) {
-    const lines = await CasbinRule.find(filter);
+  async loadFilteredPolicy (model, filter) {
+    if (filter) {
+      this.setFiltered(true);
+    } else {
+      this.setFiltered(false);
+    }
 
+    const lines = await CasbinRule.find(filter || {});
     for (const line of lines) {
       this.loadPolicyLine(line, model);
     }
@@ -233,15 +270,6 @@ class MongooseAdapter {
     }
 
     await CasbinRule.deleteMany(where);
-  }
-
-  /**
-   * Check if adapter is in filtered state.
-   *
-   * @returns {Boolean}
-   */
-  get isFiltered () {
-    return true;
   }
 }
 
