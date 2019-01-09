@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
 const { Helper } = require('casbin');
+const mongoose = require('mongoose');
 const CasbinRule = require('./model');
 
 /**
@@ -11,8 +11,9 @@ class MongooseAdapter {
   /**
    * Creates a new instance of mongoose adapter for casbin.
    * It does not wait for successfull connection to MongoDB.
-   * So, if you want to have a possibility to wait until connection successful, use newAdapter.
+   * So, if you want to have a possibility to wait until connection successful, use newAdapter instead.
    *
+   * @constructor
    * @param {String} uri Mongo URI where casbin rules must be persisted
    * @param {Object} [options={}] Additional options to pass on to mongoose client
    * @example
@@ -52,6 +53,7 @@ class MongooseAdapter {
   /**
    * Creates a new instance of mongoose adapter for casbin.
    * It does the same as newAdapter, but it also sets a flag that this adapter is in filtered state.
+   * That way, casbin will not call loadPolicy() automatically.
    *
    * @static
    * @param {String} uri Mongo URI where casbin rules must be persisted
@@ -71,7 +73,7 @@ class MongooseAdapter {
    * Switch adapter to (non)filtered state.
    * Casbin uses this flag to determine if it should load the whole policy from DB or not.
    *
-   * @param {Boolean} isFiltered Flag that represents the current state of adapter
+   * @param {Boolean} [isFiltered=true] Flag that represents the current state of adapter (filtered or not)
    */
   setFiltered (isFiltered = true) {
     this.isFiltered = isFiltered;
@@ -79,10 +81,10 @@ class MongooseAdapter {
 
   /**
    * Loads one policy rule into casbin model.
+   * This method is used by casbin and should not be called by user.
    *
    * @param {Object} line Record with one policy rule from MongoDB
    * @param {Object} model Casbin model to which policy rule must be loaded
-   * @returns {void}
    */
   loadPolicyLine (line, model) {
     let lineText = line.p_type;
@@ -116,6 +118,7 @@ class MongooseAdapter {
 
   /**
    * Implements the process of loading policy from database into enforcer.
+   * This method is used by casbin and should not be called by user.
    *
    * @param {Model} model Model instance from enforcer
    * @returns {Promise<void>}
@@ -126,9 +129,10 @@ class MongooseAdapter {
 
   /**
    * Loads partial policy based on filter criteria.
+   * This method is used by casbin and should not be called by user.
    *
    * @param {Model} model Enforcer model
-   * @param {Object} filter MongoDB filter to query
+   * @param {Object} [filter] MongoDB filter to query
    */
   async loadFilteredPolicy (model, filter) {
     if (filter) {
@@ -145,6 +149,7 @@ class MongooseAdapter {
 
   /**
    * Persists one policy rule into MongoDB.
+   * This method is used by casbin and should not be called by user.
    *
    * @param {String} ptype Policy type to save into MongoDB
    * @param {Array<String>} rule An array which consists of policy rule elements to store
@@ -182,6 +187,7 @@ class MongooseAdapter {
 
   /**
    * Implements the process of saving policy from enforcer into database.
+   * This method is used by casbin and should not be called by user.
    *
    * @param {Model} model Model instance from enforcer
    * @returns {Promise<Boolean>}
@@ -209,6 +215,7 @@ class MongooseAdapter {
 
   /**
    * Implements the process of adding policy rule.
+   * This method is used by casbin and should not be called by user.
    *
    * @param {String} sec Section of the policy
    * @param {String} ptype Type of the policy (e.g. "p" or "g")
@@ -222,6 +229,7 @@ class MongooseAdapter {
 
   /**
    * Implements the process of removing policy rule.
+   * This method is used by casbin and should not be called by user.
    *
    * @param {String} sec Section of the policy
    * @param {String} ptype Type of the policy (e.g. "p" or "g")
@@ -235,6 +243,7 @@ class MongooseAdapter {
 
   /**
    * Implements the process of removing policy rules.
+   * This method is used by casbin and should not be called by user.
    *
    * @param {String} sec Section of the policy
    * @param {String} ptype Type of the policy (e.g. "p" or "g")
