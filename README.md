@@ -13,13 +13,13 @@ npm install --save @elastic.io/casbin-mongoose-adapter
 Require it in a place, where you are instantiating an enforcer ([read more about enforcer here](https://github.com/casbin/node-casbin#get-started)):
 
 ```javascript
+const path = require('path');
+const { newEnforcer } = require('casbin');
 const MongooseAdapter = require('@elastic.io/casbin-mongoose-adapter');
 
-async function initEnforcer() {
-  const model = path.resolve(__dirname, './model.conf');
-  const adapter = await MongooseAdapter.newAdapter('mongodb://your_mongodb_uri:27017');
-  const enforcer = await Enforcer.newEnforcer(model, adapter);
-}
+const model = path.resolve(__dirname, './your_model.conf');
+const adapter = await MongooseAdapter.newAdapter('mongodb://your_mongodb_uri:27017');
+const enforcer = await newEnforcer(model, adapter);
 ```
 
 That is all what required for integrating the adapter into casbin.
@@ -35,6 +35,20 @@ const adapter = await MongooseAdapter.newAdapter('mongodb://your_mongodb_uri:270
 ```
 
 Additional information regard to options you can pass in you can find in [mongoose documentation](https://mongoosejs.com/docs/connections.html#options)
+
+## Filtered Adapter
+
+You can create an adapter instance that will load only those rules you need to.
+
+A simple case for it is when you have separate policy rules for separate domains (tenants).
+You do not need to load all the rules for all domains to make an authorization in specific domain.
+
+For such cases, filtered adapter exists in casbin.
+
+```javascript
+const MongooseAdapter = require('@elastic.io/casbin-mongoose-adapter');
+const adapter = await MongooseAdapter.newFilteredAdapter('mongodb://your_mongodb_uri:27017');
+```
 
 ## License
 
