@@ -3,15 +3,24 @@
   "version": "1.0.0",
   "description": "Mongoose adapter for Casbin",
   "main": "src/adapter.js",
-  "author": "elastic.io GmbH",
   "license": "Apache-2.0",
   "homepage": "https://github.com/elasticio/casbin-mongoose-adapter#readme",
+  "author": {
+    "name": "elastic.io GmbH",
+    "url": "https://elastic.io"
+  },
+  "contributors": [{
+    "name": "Eugene Obrezkov",
+    "email": "ghaiklor@gmail.com",
+    "url": "https://ghaiklor.com"
+  }],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/elasticio/casbin-mongoose-adapter.git"
   },
   "bugs": {
-    "url": "https://github.com/elasticio/casbin-mongoose-adapter/issues"
+    "url": "https://github.com/elasticio/casbin-mongoose-adapter/issues",
+    "email": "ghaiklor@gmail.com"
   },
   "keywords": [
     "casbin",
@@ -27,10 +36,17 @@
     "abac",
     "orm"
   ],
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "publishConfig": {
+    "tag": "latest",
+    "registry": "https://registry.npmjs.org"
+  },
   "scripts": {
     "docs": "jsdoc2md \"src/**/*.js\" > ./API.md",
     "lint": "eslint .",
-    "prepublishOnly": "npm run lint && npm run test",
+    "prepublishOnly": "npm run lint && npm run test && npm run docs",
     "test:integration": "mocha --opts test/integration/mocha.opts",
     "test": "npm run test:integration"
   },
