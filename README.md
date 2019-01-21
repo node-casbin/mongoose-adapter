@@ -1,4 +1,15 @@
-# casbin-mongoose-adapter
+casbin-mongoose-adapter
+====
+[![NPM version][npm-image]][npm-url]
+[![NPM download][download-image]][download-url]
+[![Build Status](https://travis-ci.org/elasticio/casbin-mongoose-adapter.svg?branch=master)](https://travis-ci.org/elasticio/casbin-mongoose-adapter)
+[![Coverage Status](https://coveralls.io/repos/github/elasticio/casbin-mongoose-adapter/badge.svg?branch=master)](https://coveralls.io/github/elasticio/casbin-mongoose-adapter?branch=master)
+[![Release](https://img.shields.io/github/release/elasticio/casbin-mongoose-adapter.svg)](https://github.com/elasticio/casbin-mongoose-adapter/releases/latest)
+
+[npm-image]: https://img.shields.io/npm/v/@elastic.io/casbin-mongoose-adapter.svg?style=flat-square
+[npm-url]: https://npmjs.com/package/@elastic.io/casbin-mongoose-adapter
+[download-image]: https://img.shields.io/npm/dm/@elastic.io/casbin-mongoose-adapter.svg?style=flat-square
+[download-url]: https://npmjs.com/package/@elastic.io/casbin-mongoose-adapter
 
 MongoDB policy storage, implemented as an adapter for [node-casbin](https://github.com/casbin/node-casbin).
 
