@@ -46,4 +46,12 @@ describe('MongooseAdapter', () => {
     const rulesAfterDelete = await CasbinRule.find({ p_type: 'p', v0: 'sub', v1: 'obj', v2: 'act' });
     assert.equal(rulesAfterDelete.length, 0);
   });
+
+  it('Should allow you to close the connection', async () => {
+    const enforcer = await createEnforcer();
+    const adapter = enforcer.getAdapter();
+    assert.equal(adapter.mongoseInstance.connection.readyState, 1);
+    await adapter.close();
+    assert.equal(adapter.mongoseInstance.connection.readyState, 0);
+  });
 });

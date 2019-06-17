@@ -28,7 +28,9 @@ class MongooseAdapter {
     // by default, adapter is not filtered
     this.isFiltered = false;
 
-    mongoose.connect(uri, options);
+    mongoose.connect(uri, options).then(instance => {
+      this.mongoseInstance = instance;
+    });
   }
 
   /**
@@ -279,6 +281,12 @@ class MongooseAdapter {
     }
 
     await CasbinRule.deleteMany(where);
+  }
+
+  async close () {
+    if (this.mongoseInstance && this.mongoseInstance.connection) {
+      this.mongoseInstance.connection.close();
+    }
   }
 }
 
