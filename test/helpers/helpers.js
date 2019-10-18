@@ -14,13 +14,20 @@
 
 const path = require('path');
 const { newEnforcer } = require('casbin');
-const MongooseAdapter = require('../..');
+const MongooseAdapter = require('../../src/adapter');
+const model = path.resolve(__dirname, '../fixtures/basic_model.conf');
+const policy = path.resolve(__dirname, '../fixtures/policy.csv');
 
-const MONGOOSE_OPTIONS = { useNewUrlParser: true, useCreateIndex: true };
+const MONGOOSE_OPTIONS = { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true };
 
-module.exports = async function createEnforcer () {
-  const model = path.resolve(__dirname, '../fixtures/basic_model.conf');
+async function createEnforcer () {
   const adapter = await MongooseAdapter.newAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS);
 
   return newEnforcer(model, adapter);
 };
+
+async function createAdapter (noTransaction = false) {
+  return MongooseAdapter.newAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS, false, noTransaction);
+};
+
+module.exports = { createEnforcer, createAdapter, model, policy };
