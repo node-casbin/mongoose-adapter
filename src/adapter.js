@@ -41,6 +41,7 @@ class MongooseAdapter {
 
     // by default, adapter is not filtered
     this.isFiltered = false;
+    this.transaction = false;
 
     mongoose.connect(uri, options).then(instance => {
       this.mongoseInstance = instance;
@@ -59,10 +60,11 @@ class MongooseAdapter {
    * const adapter = await MongooseAdapter.newAdapter('MONGO_URI');
    * const adapter = await MongooseAdapter.newAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
-  static async newAdapter (uri, options = {}) {
+  static async newAdapter (uri, options = {}, filtered = false, transaction = false) {
     const adapter = new MongooseAdapter(uri, options);
     await new Promise(resolve => mongoose.connection.once('connected', resolve));
-
+    adapter.setFiltered(filtered);
+    adapter.setTransaction(transaction);
     return adapter;
   }
 
@@ -93,6 +95,10 @@ class MongooseAdapter {
    */
   setFiltered (isFiltered = true) {
     this.isFiltered = isFiltered;
+  }
+
+  setTransaction (transactioned = true) {
+    this.transaction = transactioned;
   }
 
   /**
@@ -203,27 +209,53 @@ class MongooseAdapter {
 
   /**
    * Implements the process of saving policy from enforcer into database.
+   * If you are using replica sets with mongo, this function will use mongo
+   * transaction, so every line in the policy needs tosucceed for this to
+   * take effect.
    * This method is used by casbin and should not be called by user.
    *
    * @param {Model} model Model instance from enforcer
    * @returns {Promise<Boolean>}
    */
   async savePolicy (model) {
-    const policyRuleAST = model.model.get('p');
-    const groupingPolicyAST = model.model.get('g');
-
-    for (const [ptype, ast] of policyRuleAST) {
-      for (const rule of ast.policy) {
-        const line = this.savePolicyLine(ptype, rule);
-        await line.save();
+    if (!this.mongoseInstance.connections[0].replica) {
+      console.warn('casbin-mongoose-adapter: MongoDB currently only supports transactions on replica sets, not standalone servers.');
+      if (this.transaction) {
+        console.warn('If you do not care set transaction option to false in casbin-mongoose-adapter');
+        return false;
       }
     }
 
-    for (const [ptype, ast] of groupingPolicyAST) {
-      for (const rule of ast.policy) {
-        const line = this.savePolicyLine(ptype, rule);
-        await line.save();
+    let session;
+    if (this.transaction) {
+      session = await CasbinRule.startSession();
+      session.startTransaction();
+    }
+
+    try {
+      const lines = [];
+      const policyRuleAST = model.model.get('p');
+      const groupingPolicyAST = model.model.get('g');
+
+      for (const [ptype, ast] of policyRuleAST) {
+        for (const rule of ast.policy) {
+          lines.push(this.savePolicyLine(ptype, rule));
+        }
       }
+
+      for (const [ptype, ast] of groupingPolicyAST) {
+        for (const rule of ast.policy) {
+          lines.push(this.savePolicyLine(ptype, rule));
+        }
+      }
+
+      await CasbinRule.collection.insertMany(lines, session ? { session: session } : null);
+      session && await session.commitTransaction();
+    } catch (err) {
+      session && await session.abortTransaction();
+      throw err;
+    } finally {
+      session && await session.endSession();
     }
 
     return true;
