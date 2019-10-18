@@ -13,7 +13,8 @@
 // limitations under the License.
 
 const { assert } = require('chai');
-const createEnforcer = require('../helpers/createEnforcer');
+const { createEnforcer, createAdapter, model, policy } = require('../helpers/helpers');
+const { newEnforcer } = require('casbin');
 const CasbinRule = require('../../src/model');
 
 // These tests are just smoke tests for get/set policy rules
@@ -42,6 +43,111 @@ describe('MongooseAdapter', () => {
 
     const rulesAfter = await CasbinRule.find({ p_type: 'p', v0: 'sub', v1: 'obj', v2: 'act' });
     assert.equal(rulesAfter.length, 1);
+  });
+
+  it('Should properly store new policy rules from a file', async () => {
+    const a = await createAdapter();
+    // Because the DB is empty at first,
+    // so we need to load the policy from the file adapter (.CSV) first.
+    let e = await newEnforcer(model, policy);
+
+    const rulesBefore = await CasbinRule.find({});
+    assert.equal(rulesBefore.length, 0);
+
+    // This is a trick to save the current policy to the DB.
+    // We can't call e.savePolicy() because the adapter in the enforcer is still the file adapter.
+    // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
+    await a.savePolicy(e.getModel());
+    const rulesAfter = await CasbinRule.find({});
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2]), [
+      ['p', 'alice', 'data1', 'read'],
+      ['p', 'bob', 'data2', 'write'],
+      ['p', 'data2_admin', 'data2', 'read'],
+      ['p', 'data2_admin', 'data2', 'write'],
+      ['g', 'alice', 'data2_admin', undefined]]);
+
+    // Clear the current policy.
+    e.clearPolicy();
+    assert.deepEqual(e.getPolicy(), []);
+
+    // Load the policy from DB.
+    await a.loadPolicy(e.getModel());
+    assert.deepEqual(e.getPolicy(), [
+      ['alice', 'data1', 'read'],
+      ['bob', 'data2', 'write'],
+      ['data2_admin', 'data2', 'read'],
+      ['data2_admin', 'data2', 'write']]);
+
+    // Note: you don't need to look at the above code
+    // if you already have a working DB with policy inside.
+
+    // Now the DB has policy, so we can provide a normal use case.
+    // Create an adapter and an enforcer.
+    // newEnforcer() will load the policy automatically.
+    e = await newEnforcer(model, a);
+    assert.deepEqual(e.getPolicy(), [
+      ['alice', 'data1', 'read'],
+      ['bob', 'data2', 'write'],
+      ['data2_admin', 'data2', 'read'],
+      ['data2_admin', 'data2', 'write']]);
+
+    // Add policy to DB
+    await a.addPolicy('', 'p', ['role', 'res', 'action']);
+    e = await newEnforcer(model, a);
+    assert.deepEqual(e.getPolicy(), [
+      ['alice', 'data1', 'read'],
+      ['bob', 'data2', 'write'],
+      ['data2_admin', 'data2', 'read'],
+      ['data2_admin', 'data2', 'write'],
+      ['role', 'res', 'action']]);
+    // Remove policy from DB
+    await a.removePolicy('', 'p', ['role', 'res', 'action']);
+    e = await newEnforcer(model, a);
+    assert.deepEqual(e.getPolicy(), [
+      ['alice', 'data1', 'read'],
+      ['bob', 'data2', 'write'],
+      ['data2_admin', 'data2', 'read'],
+      ['data2_admin', 'data2', 'write']]);
+  });
+
+  it('Should not store new policy rules if one of them fails', async () => {
+    const a = await createAdapter();
+    // Because the DB is empty at first,
+    // so we need to load the policy from the file adapter (.CSV) first.
+    const e = await newEnforcer(model, policy);
+    const rulesBefore = await CasbinRule.find({});
+    assert.equal(rulesBefore.length, 0);
+
+    // This is a trick to save the current policy to the DB.
+    // We can't call e.savePolicy() because the adapter in the enforcer is still the file adapter.
+    // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
+    e.getModel().model.set('g', {});
+
+    try {
+      await a.savePolicy(e.getModel());
+    } catch (err) {
+      if (err instanceof TypeError) {
+        const rulesAfter = await CasbinRule.find({});
+        assert.equal(rulesAfter.length, 0);
+      } else {
+        throw err;
+      }
+    }
+  });
+
+  it('Should properly fail when transaction is set to true', async () => {
+    const a = await createAdapter(true);
+    // Because the DB is empty at first,
+    // so we need to load the policy from the file adapter (.CSV) first.
+    const e = await newEnforcer(model, policy);
+
+    const rulesBefore = await CasbinRule.find({});
+    assert.equal(rulesBefore.length, 0);
+
+    // This is a trick to save the current policy to the DB.
+    // We can't call e.savePolicy() because the adapter in the enforcer is still the file adapter.
+    // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
+    assert.isFalse(await a.savePolicy(e.getModel()));
   });
 
   it('Should properly delete existing policy rules', async () => {

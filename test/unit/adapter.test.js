@@ -15,7 +15,7 @@
 const { assert } = require('chai');
 const MongooseAdapter = require('../..');
 
-const MONGOOSE_OPTIONS = { useNewUrlParser: true, useCreateIndex: true };
+const MONGOOSE_OPTIONS = { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true };
 
 describe('MongooseAdapter', () => {
   it('Should properly throw error if Mongo URI is not provided', async () => {
