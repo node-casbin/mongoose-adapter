@@ -42,10 +42,15 @@ class MongooseAdapter {
     // by default, adapter is not filtered
     this.isFiltered = false;
     this.transaction = false;
+    this.uri = uri;
+    this.options = options;
+  }
 
-    mongoose.connect(uri, options).then(instance => {
-      this.mongoseInstance = instance;
-    });
+  async _open () {
+    await mongoose.connect(this.uri, this.options)
+      .then(instance => {
+        this.mongoseInstance = instance;
+      });
   }
 
   /**
@@ -62,7 +67,7 @@ class MongooseAdapter {
    */
   static async newAdapter (uri, options = {}, filtered = false, transaction = false) {
     const adapter = new MongooseAdapter(uri, options);
-    await new Promise(resolve => mongoose.connection.once('connected', resolve));
+    await adapter._open();
     adapter.setFiltered(filtered);
     adapter.setTransaction(transaction);
     return adapter;
@@ -81,8 +86,8 @@ class MongooseAdapter {
    * const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
   static async newFilteredAdapter (uri, options = {}) {
-    const adapter = await MongooseAdapter.newAdapter(uri, options);
-    adapter.setFiltered(true);
+    const adapter = await MongooseAdapter.newAdapter(uri, options, true);
+    await adapter._open();
 
     return adapter;
   }
