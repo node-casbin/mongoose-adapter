@@ -26,8 +26,8 @@ async function createEnforcer () {
   return newEnforcer(model, adapter);
 };
 
-async function createAdapter (noTransaction = false) {
-  return MongooseAdapter.newAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS, false, noTransaction);
+async function createAdapter (useTransaction = false) {
+  return MongooseAdapter.newAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS, false, useTransaction);
 };
 
 module.exports = { createEnforcer, createAdapter, model, policy };
