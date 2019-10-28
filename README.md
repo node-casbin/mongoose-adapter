@@ -1,11 +1,20 @@
-casbin-mongoose-adapter
-===
-[![NPM version](https://img.shields.io/npm/v/@elastic.io/casbin-mongoose-adapter.svg?style=flat-square)](https://npmjs.com/package/@elastic.io/casbin-mongoose-adapter)
-[![NPM download](https://img.shields.io/npm/dm/@elastic.io/casbin-mongoose-adapter.svg?style=flat-square)](https://npmjs.com/package/@elastic.io/casbin-mongoose-adapter)
-[![CircleCI](https://circleci.com/gh/elasticio/casbin-mongoose-adapter/tree/master.svg?style=svg)](https://circleci.com/gh/elasticio/casbin-mongoose-adapter/tree/master)
-[![Release](https://img.shields.io/github/release/elasticio/casbin-mongoose-adapter.svg)](https://github.com/elasticio/casbin-mongoose-adapter/releases/latest)
+Mongoose Adapter
+====
+[![NPM version][npm-image]][npm-url]
+[![NPM download][download-image]][download-url]
+[![codebeat badge](https://codebeat.co/badges/c17c9ee1-da42-4db3-8047-9574ad2b23b1)](https://codebeat.co/projects/github-com-node-casbin-mongoose-adapter-master)
+[![Build Status](https://travis-ci.org/node-casbin/mongoose-adapter.svg?branch=master)](https://travis-ci.org/node-casbin/mongoose-adapter)
+[![Coverage Status](https://coveralls.io/repos/github/node-casbin/mongoose-adapter/badge.svg?branch=master)](https://coveralls.io/github/node-casbin/mongoose-adapter?branch=master)
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/casbin/lobby)
 
-MongoDB policy storage, implemented as an adapter for [node-casbin](https://github.com/casbin/node-casbin).
+[npm-image]: https://img.shields.io/npm/v/casbin-mongoose-adapter.svg?style=flat-square
+[npm-url]: https://npmjs.org/package/casbin-mongoose-adapter
+[download-image]: https://img.shields.io/npm/dm/casbin-mongoose-adapter.svg?style=flat-square
+[download-url]: https://npmjs.org/package/casbin-mongoose-adapter
+
+Mongoose Adapter is the [Mongoose](https://github.com/Automattic/mongoose/) adapter for [Node-Casbin](https://github.com/casbin/node-casbin). With this library, Node-Casbin can load policy from Mongoose supported database or save policy to it. It is originally developed by @ghaiklor from @elasticio.
+
+Based on [Officially Supported Databases](https://mongoosejs.com/docs/), The current supported database is MongoDB.
 
 ## Getting Started
 
