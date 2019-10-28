@@ -41,7 +41,7 @@ class MongooseAdapter {
 
     // by default, adapter is not filtered
     this.isFiltered = false;
-    this.transaction = false;
+    this.useTransaction = false;
     this.uri = uri;
     this.options = options;
   }
@@ -65,11 +65,11 @@ class MongooseAdapter {
    * const adapter = await MongooseAdapter.newAdapter('MONGO_URI');
    * const adapter = await MongooseAdapter.newAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
-  static async newAdapter (uri, options = {}, filtered = false, transaction = false) {
+  static async newAdapter (uri, options = {}, filtered = false, useTransaction = false) {
     const adapter = new MongooseAdapter(uri, options);
     await adapter._open();
     adapter.setFiltered(filtered);
-    adapter.setTransaction(transaction);
+    adapter.setTransaction(useTransaction);
     return adapter;
   }
 
@@ -103,7 +103,7 @@ class MongooseAdapter {
   }
 
   setTransaction (transactioned = true) {
-    this.transaction = transactioned;
+    this.useTransaction = transactioned;
   }
 
   /**
@@ -223,16 +223,17 @@ class MongooseAdapter {
    * @returns {Promise<Boolean>}
    */
   async savePolicy (model) {
-    if (!this.mongoseInstance.connections[0].replica) {
+    const conn = this.mongoseInstance.connections[0];
+    if (conn && !conn.replica) {
       console.warn('casbin-mongoose-adapter: MongoDB currently only supports transactions on replica sets, not standalone servers.');
-      if (this.transaction) {
-        console.warn('If you do not care set transaction option to false in casbin-mongoose-adapter');
+      if (this.useTransaction) {
+        console.warn('If you do not care set useTransaction option to false in casbin-mongoose-adapter');
         return false;
       }
     }
 
     let session;
-    if (this.transaction) {
+    if (this.useTransaction) {
       session = await CasbinRule.startSession();
       session.startTransaction();
     }
@@ -305,7 +306,7 @@ class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async removeFilteredPolicy (sec, ptype, fieldIndex, ...fieldValues) {
-    const where = { p_type: ptype };
+    const where = ptype ? { p_type: ptype } : {};
 
     if (fieldIndex <= 0 && fieldIndex + fieldValues.length > 0 && fieldValues[0 - fieldIndex]) {
       where.v0 = fieldValues[0 - fieldIndex];
