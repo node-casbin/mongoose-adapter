@@ -167,6 +167,58 @@ describe('MongooseAdapter', () => {
     assert.equal(rulesAfterDelete.length, 0);
   });
 
+  it('Should remove related policy rules via a filter', async () => {
+    const a = await createAdapter();
+    // Because the DB is empty at first,
+    // so we need to load the policy from the file adapter (.CSV) first.
+    let e = await newEnforcer(model, policy);
+
+    const rulesBefore = await CasbinRule.find({});
+    assert.equal(rulesBefore.length, 0);
+
+    // This is a trick to save the current policy to the DB.
+    // We can't call e.savePolicy() because the adapter in the enforcer is still the file adapter.
+    // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
+    await a.savePolicy(e.getModel());
+    let rulesAfter = await CasbinRule.find({});
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2]), [
+      ['p', 'alice', 'data1', 'read'],
+      ['p', 'bob', 'data2', 'write'],
+      ['p', 'data2_admin', 'data2', 'read'],
+      ['p', 'data2_admin', 'data2', 'write'],
+      ['g', 'alice', 'data2_admin', undefined]]);
+
+    // Remove 'data2_admin' related policy rules via a filter.
+    // Two rules: {'data2_admin', 'data2', 'read'}, {'data2_admin', 'data2', 'write'} are deleted.
+    await a.removeFilteredPolicy(undefined, undefined, 0, 'data2_admin');
+    rulesAfter = await CasbinRule.find({});
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2]), [
+      ['p', 'alice', 'data1', 'read'],
+      ['p', 'bob', 'data2', 'write'],
+      ['g', 'alice', 'data2_admin', undefined]]);
+    e = await newEnforcer(model, a);
+    assert.deepEqual(e.getPolicy(), [['alice', 'data1', 'read'], ['bob', 'data2', 'write']]);
+
+    // Remove 'data1' related policy rules via a filter.
+    // One rule: {'alice', 'data1', 'read'} is deleted.
+    await a.removeFilteredPolicy(undefined, undefined, 1, 'data1');
+    rulesAfter = await CasbinRule.find({});
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2]), [
+      ['p', 'bob', 'data2', 'write'],
+      ['g', 'alice', 'data2_admin', undefined]]);
+    e = await newEnforcer(model, a);
+    assert.deepEqual(e.getPolicy(), [['bob', 'data2', 'write']]);
+
+    // Remove 'write' related policy rules via a filter.
+    // One rule: {'bob', 'data2', 'write'} is deleted.
+    await a.removeFilteredPolicy(undefined, undefined, 2, 'write');
+    rulesAfter = await CasbinRule.find({});
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2]), [
+      ['g', 'alice', 'data2_admin', undefined]]);
+    e = await newEnforcer(model, a);
+    assert.deepEqual(e.getPolicy(), []);
+  });
+
   it('Should allow you to close the connection', async () => {
     const enforcer = await createEnforcer();
     const adapter = enforcer.getAdapter();
