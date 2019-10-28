@@ -13,7 +13,7 @@
 // limitations under the License.
 
 const { assert } = require('chai');
-const { createEnforcer, createAdapter, model, policy } = require('../helpers/helpers');
+const { createEnforcer, createAdapter, createDisconnectedAdapter, model, policy } = require('../helpers/helpers');
 const { newEnforcer } = require('casbin');
 const CasbinRule = require('../../src/model');
 
@@ -220,10 +220,21 @@ describe('MongooseAdapter', () => {
   });
 
   it('Should allow you to close the connection', async () => {
+    // Create mongoAdapter
     const enforcer = await createEnforcer();
     const adapter = enforcer.getAdapter();
-    assert.equal(adapter.mongoseInstance.connection.readyState, 1);
+    assert.equal(adapter.mongoseInstance.connection.readyState, 1, 'Connection should be open');
+
+    // Connection should close
     await adapter.close();
-    assert.equal(adapter.mongoseInstance.connection.readyState, 0);
+    assert.equal(adapter.mongoseInstance.connection.readyState, 0, 'Connection should be closed');
+  });
+
+  it('Closing a closed/undefined connection should not raise an error', async () => {
+    // Create mongoAdapter
+    const adapter = await createDisconnectedAdapter();
+    // Closing a closed connection should not raise an error
+    await adapter.close();
+    assert.equal(adapter.mongoseInstance, undefined, 'mongoseInstance should be undefined');
   });
 });

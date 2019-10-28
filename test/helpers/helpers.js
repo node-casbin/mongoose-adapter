@@ -30,4 +30,8 @@ async function createAdapter (useTransaction = false) {
   return MongooseAdapter.newAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS, false, useTransaction);
 };
 
-module.exports = { createEnforcer, createAdapter, model, policy };
+async function createDisconnectedAdapter () {
+  return new MongooseAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS);
+};
+
+module.exports = { createEnforcer, createAdapter, createDisconnectedAdapter, model, policy };
