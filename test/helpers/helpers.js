@@ -15,15 +15,17 @@
 const path = require('path');
 const { newEnforcer } = require('casbin');
 const MongooseAdapter = require('../../src/adapter');
-const model = path.resolve(__dirname, '../fixtures/basic_model.conf');
-const policy = path.resolve(__dirname, '../fixtures/policy.csv');
+const basicModel = path.resolve(__dirname, '../fixtures/basic_model.conf');
+const basicPolicy = path.resolve(__dirname, '../fixtures/basic_policy.csv');
+const rbacModel = path.resolve(__dirname, '../fixtures/rbac_model.conf');
+const rbacPolicy = path.resolve(__dirname, '../fixtures/rbac_policy.csv');
 
 const MONGOOSE_OPTIONS = { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true };
 
 async function createEnforcer () {
   const adapter = await MongooseAdapter.newAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS);
 
-  return newEnforcer(model, adapter);
+  return newEnforcer(basicModel, adapter);
 };
 
 async function createAdapter (useTransaction = false) {
@@ -34,4 +36,4 @@ async function createDisconnectedAdapter () {
   return new MongooseAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS);
 };
 
-module.exports = { createEnforcer, createAdapter, createDisconnectedAdapter, model, policy };
+module.exports = { createEnforcer, createAdapter, createDisconnectedAdapter, basicModel, basicPolicy, rbacModel, rbacPolicy };
