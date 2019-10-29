@@ -299,7 +299,7 @@ class MongooseAdapter {
 
   async close () {
     if (this.mongoseInstance && this.mongoseInstance.connection) {
-      this.mongoseInstance.connection.close();
+      await this.mongoseInstance.connection.close();
     }
   }
 }
