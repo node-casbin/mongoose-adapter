@@ -240,8 +240,8 @@ class MongooseAdapter {
 
     try {
       const lines = [];
-      const policyRuleAST = model.model.get('p');
-      const groupingPolicyAST = model.model.get('g');
+      const policyRuleAST = model.model.get('p') instanceof Map ? model.model.get('p') : new Map();
+      const groupingPolicyAST = model.model.get('g') instanceof Map ? model.model.get('g') : new Map();
 
       for (const [ptype, ast] of policyRuleAST) {
         for (const rule of ast.policy) {
