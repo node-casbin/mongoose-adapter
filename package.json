@@ -51,7 +51,7 @@
     "prepublishOnly": "npm run lint && npm run test && npm run docs",
     "test:integration": "isparta cover _mocha -- --opts test/integration/mocha.opts",
     "test:unit": "isparta cover _mocha -- --opts test/unit/mocha.opts",
-    "test": "npm run test:unit && npm run test:integration"
+    "coverage": "isparta cover _mocha -- --opts test/mocha.opts"
   },
   "devDependencies": {
     "chai": "4.2.0",
