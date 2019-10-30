@@ -41,10 +41,16 @@ class MongooseAdapter {
 
     // by default, adapter is not filtered
     this.isFiltered = false;
+    this.useTransaction = false;
+    this.uri = uri;
+    this.options = options;
+  }
 
-    mongoose.connect(uri, options).then(instance => {
-      this.mongoseInstance = instance;
-    });
+  async _open () {
+    await mongoose.connect(this.uri, this.options)
+      .then(instance => {
+        this.mongoseInstance = instance;
+      });
   }
 
   /**
@@ -59,10 +65,11 @@ class MongooseAdapter {
    * const adapter = await MongooseAdapter.newAdapter('MONGO_URI');
    * const adapter = await MongooseAdapter.newAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
-  static async newAdapter (uri, options = {}) {
+  static async newAdapter (uri, options = {}, filtered = false, useTransaction = false) {
     const adapter = new MongooseAdapter(uri, options);
-    await new Promise(resolve => mongoose.connection.once('connected', resolve));
-
+    await adapter._open();
+    adapter.setFiltered(filtered);
+    adapter.setTransaction(useTransaction);
     return adapter;
   }
 
@@ -79,8 +86,8 @@ class MongooseAdapter {
    * const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
   static async newFilteredAdapter (uri, options = {}) {
-    const adapter = await MongooseAdapter.newAdapter(uri, options);
-    adapter.setFiltered(true);
+    const adapter = await MongooseAdapter.newAdapter(uri, options, true);
+    await adapter._open();
 
     return adapter;
   }
@@ -93,6 +100,10 @@ class MongooseAdapter {
    */
   setFiltered (isFiltered = true) {
     this.isFiltered = isFiltered;
+  }
+
+  setTransaction (transactioned = true) {
+    this.useTransaction = transactioned;
   }
 
   /**
@@ -203,27 +214,54 @@ class MongooseAdapter {
 
   /**
    * Implements the process of saving policy from enforcer into database.
+   * If you are using replica sets with mongo, this function will use mongo
+   * transaction, so every line in the policy needs tosucceed for this to
+   * take effect.
    * This method is used by casbin and should not be called by user.
    *
    * @param {Model} model Model instance from enforcer
    * @returns {Promise<Boolean>}
    */
   async savePolicy (model) {
-    const policyRuleAST = model.model.get('p');
-    const groupingPolicyAST = model.model.get('g');
-
-    for (const [ptype, ast] of policyRuleAST) {
-      for (const rule of ast.policy) {
-        const line = this.savePolicyLine(ptype, rule);
-        await line.save();
+    const conn = this.mongoseInstance.connections[0];
+    if (conn && !conn.replica) {
+      console.warn('casbin-mongoose-adapter: MongoDB currently only supports transactions on replica sets, not standalone servers.');
+      if (this.useTransaction) {
+        console.warn('If you do not care set useTransaction option to false in casbin-mongoose-adapter');
+        return false;
       }
     }
 
-    for (const [ptype, ast] of groupingPolicyAST) {
-      for (const rule of ast.policy) {
-        const line = this.savePolicyLine(ptype, rule);
-        await line.save();
+    let session;
+    if (this.useTransaction) {
+      session = await CasbinRule.startSession();
+      session.startTransaction();
+    }
+
+    try {
+      const lines = [];
+      const policyRuleAST = model.model.get('p') instanceof Map ? model.model.get('p') : new Map();
+      const groupingPolicyAST = model.model.get('g') instanceof Map ? model.model.get('g') : new Map();
+
+      for (const [ptype, ast] of policyRuleAST) {
+        for (const rule of ast.policy) {
+          lines.push(this.savePolicyLine(ptype, rule));
+        }
       }
+
+      for (const [ptype, ast] of groupingPolicyAST) {
+        for (const rule of ast.policy) {
+          lines.push(this.savePolicyLine(ptype, rule));
+        }
+      }
+
+      await CasbinRule.collection.insertMany(lines, session ? { session: session } : null);
+      session && await session.commitTransaction();
+    } catch (err) {
+      session && await session.abortTransaction();
+      throw err;
+    } finally {
+      session && await session.endSession();
     }
 
     return true;
@@ -268,7 +306,7 @@ class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async removeFilteredPolicy (sec, ptype, fieldIndex, ...fieldValues) {
-    const where = { p_type: ptype };
+    const where = ptype ? { p_type: ptype } : {};
 
     if (fieldIndex <= 0 && fieldIndex + fieldValues.length > 0 && fieldValues[0 - fieldIndex]) {
       where.v0 = fieldValues[0 - fieldIndex];
