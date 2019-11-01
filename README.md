@@ -21,7 +21,7 @@ Based on [Officially Supported Databases](https://mongoosejs.com/docs/), The cur
 Install the package as dependency in your project:
 
 ```bash
-npm install --save @elastic.io/casbin-mongoose-adapter
+npm install --save casbin-mongoose-adapter
 ```
 
 Require it in a place, where you are instantiating an enforcer ([read more about enforcer here](https://github.com/casbin/node-casbin#get-started)):
@@ -29,7 +29,7 @@ Require it in a place, where you are instantiating an enforcer ([read more about
 ```javascript
 const path = require('path');
 const { newEnforcer } = require('casbin');
-const MongooseAdapter = require('@elastic.io/casbin-mongoose-adapter');
+const MongooseAdapter = require('casbin-mongoose-adapter');
 
 const model = path.resolve(__dirname, './your_model.conf');
 const adapter = await MongooseAdapter.newAdapter('mongodb://your_mongodb_uri:27017');
@@ -44,7 +44,7 @@ Casbin itself calls adapter methods to persist updates you made through it.
 You can pass mongooose-specific options when instantiating the adapter:
 
 ```javascript
-const MongooseAdapter = require('@elastic.io/casbin-mongoose-adapter');
+const MongooseAdapter = require('casbin-mongoose-adapter');
 const adapter = await MongooseAdapter.newAdapter('mongodb://your_mongodb_uri:27017', { mongoose_options: 'here' });
 ```
 
@@ -60,7 +60,7 @@ You do not need to load all the rules for all domains to make an authorization i
 For such cases, filtered adapter exists in casbin.
 
 ```javascript
-const MongooseAdapter = require('@elastic.io/casbin-mongoose-adapter');
+const MongooseAdapter = require('casbin-mongoose-adapter');
 const adapter = await MongooseAdapter.newFilteredAdapter('mongodb://your_mongodb_uri:27017');
 ```
 

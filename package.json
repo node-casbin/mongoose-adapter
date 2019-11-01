@@ -1,13 +1,12 @@
 {
-  "name": "@elastic.io/casbin-mongoose-adapter",
+  "name": "casbin-mongoose-adapter",
   "version": "1.0.0",
   "description": "Mongoose adapter for Casbin",
   "main": "src/adapter.js",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/elasticio/casbin-mongoose-adapter#readme",
+  "homepage": "https://github.com/node-casbin/mongoose-adapter",
   "author": {
-    "name": "elastic.io GmbH",
-    "url": "https://elastic.io"
+    "name": "Node-Casbin"
   },
   "contributors": [
     {
@@ -18,11 +17,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/elasticio/casbin-mongoose-adapter.git"
+    "url": "git+https://github.com/node-casbin/mongoose-adapter.git"
   },
   "bugs": {
-    "url": "https://github.com/elasticio/casbin-mongoose-adapter/issues",
-    "email": "dev@elastic.io"
+    "url": "https://github.com/node-casbin/mongoose-adapter/issues"
   },
   "keywords": [
     "casbin",
