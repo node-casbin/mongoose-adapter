@@ -277,6 +277,89 @@ describe('MongooseAdapter', () => {
     assert.deepEqual(e.getPolicy(), []);
   });
 
+  it('Should remove user\'s policies and groups when using deleteUser', async () => {
+    const a = await createAdapter();
+    // Because the DB is empty at first,
+    // so we need to load the policy from the file adapter (.CSV) first.
+    let e = await newEnforcer(rbacModel, rbacPolicy);
+
+    const rulesBefore = await CasbinRule.find({});
+    assert.equal(rulesBefore.length, 0);
+
+    // This is a trick to save the current policy to the DB.
+    // We can't call e.savePolicy() because the adapter in the enforcer is still the file adapter.
+    // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
+    await a.savePolicy(e.getModel());
+    let rulesAfter = await CasbinRule.find({});
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2]), [
+      ['p', 'alice', 'data1', 'read'],
+      ['p', 'bob', 'data2', 'write'],
+      ['p', 'data2_admin', 'data2', 'read'],
+      ['p', 'data2_admin', 'data2', 'write'],
+      ['g', 'alice', 'data2_admin', undefined]]);
+
+    e = await newEnforcer(rbacModel, a);
+    // Remove 'alice' related policy rules via a RBAC deleteUser-function.
+    // One policy: {'alice', 'data2', 'read'} and One Grouping Policy {'alice', 'data2_admin'} are deleted.
+    await e.deleteUser('alice');
+    rulesAfter = await CasbinRule.find({});
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2]), [
+      ['p', 'bob', 'data2', 'write'],
+      ['p', 'data2_admin', 'data2', 'read'],
+      ['p', 'data2_admin', 'data2', 'write']]);
+    e = await newEnforcer(rbacModel, a);
+    assert.deepEqual(e.getPolicy(), [
+      ['p', 'bob', 'data2', 'write'],
+      ['p', 'data2_admin', 'data2', 'read'],
+      ['p', 'data2_admin', 'data2', 'write']]);
+
+    // Remove 'data1' related policy rules via a filter.
+    // One rule: {'bob', 'data2', 'write'} is deleted.
+    await e.deleteUser('bob');
+    rulesAfter = await CasbinRule.find({});
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2]), [
+      ['p', 'data2_admin', 'data2', 'read'],
+      ['p', 'data2_admin', 'data2', 'write']]);
+    e = await newEnforcer(rbacModel, a);
+    assert.deepEqual(e.getPolicy(), [
+      ['data2_admin', 'data2', 'read'],
+      ['data2_admin', 'data2', 'write']]);
+  });
+
+  it('Should remove user\'s policies and groups when using deleteRole', async () => {
+    const a = await createAdapter();
+    // Because the DB is empty at first,
+    // so we need to load the policy from the file adapter (.CSV) first.
+    let e = await newEnforcer(rbacModel, rbacPolicy);
+
+    const rulesBefore = await CasbinRule.find({});
+    assert.equal(rulesBefore.length, 0);
+
+    // This is a trick to save the current policy to the DB.
+    // We can't call e.savePolicy() because the adapter in the enforcer is still the file adapter.
+    // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
+    await a.savePolicy(e.getModel());
+    let rulesAfter = await CasbinRule.find({});
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2]), [
+      ['p', 'alice', 'data1', 'read'],
+      ['p', 'bob', 'data2', 'write'],
+      ['p', 'data2_admin', 'data2', 'read'],
+      ['p', 'data2_admin', 'data2', 'write'],
+      ['g', 'alice', 'data2_admin', undefined]]);
+
+    e = await newEnforcer(rbacModel, a);
+    // Remove 'data2_admin' related policy rules via a RBAC deleteRole-function.
+    // One policy: {'alice', 'data2', 'read'} and One Grouping Policy {'alice', 'data2_admin'} are deleted.
+    await e.deleteRole('data2_admin');
+    rulesAfter = await CasbinRule.find({});
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2]), [
+      ['p', 'alice', 'data1', 'read'],
+      ['p', 'bob', 'data2', 'write']]);
+    assert.deepEqual(e.getPolicy(), [
+      ['alice', 'data1', 'read'],
+      ['bob', 'data2', 'write']]);
+  });
+
   it('Should allow you to close the connection', async () => {
     // Create mongoAdapter
     const enforcer = await createEnforcer();
