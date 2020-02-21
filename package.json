@@ -67,8 +67,8 @@
     "mocha": "7.0.1"
   },
   "dependencies": {
-    "casbin": "3.0.4",
-    "mongoose": "5.7.4"
+    "casbin": "4.1.1",
+    "mongoose": "5.9.1"
   },
   "husky": {
     "hooks": {
