@@ -47,31 +47,42 @@
     "docs": "jsdoc2md \"src/**/*.js\" > ./API.md",
     "lint": "eslint .",
     "prepublishOnly": "npm run lint && npm run test && npm run docs",
-    "test:integration": "isparta cover _mocha -- --opts test/integration/mocha.opts",
-    "test:unit": "isparta cover _mocha -- --opts test/unit/mocha.opts",
-    "coverage": "isparta cover _mocha -- --opts test/mocha.opts"
+    "test:integration": "nyc mocha -- --config test/integration/.mocharc.js",
+    "test:unit": "nyc mocha -- --config test/unit/.mocharc.js",
+    "coverage": "nyc mocha -- --config test/.mocharc.js"
   },
   "devDependencies": {
+    "casbin": "4.1.1",
     "chai": "4.2.0",
-    "coveralls": "^3.0.7",
-    "eslint": "6.5.1",
+    "coveralls": "^3.0.9",
+    "cz-conventional-changelog": "3.0.2",
+    "eslint": "6.8.0",
     "eslint-config-standard": "14.1.0",
-    "eslint-plugin-import": "2.18.2",
-    "eslint-plugin-node": "10.0.0",
+    "eslint-plugin-import": "2.20.1",
+    "eslint-plugin-node": "11.0.0",
     "eslint-plugin-promise": "4.2.1",
     "eslint-plugin-standard": "4.0.1",
-    "husky": "3.0.8",
-    "isparta": "4.1.1",
-    "jsdoc-to-markdown": "5.0.2",
-    "mocha": "6.2.1"
+    "husky": "4.2.3",
+    "nyc": "15.0.0",
+    "jsdoc-to-markdown": "5.0.3",
+    "mocha": "7.0.1"
   },
   "dependencies": {
-    "casbin": "3.0.4",
-    "mongoose": "5.7.4"
+    "casbin": "4.1.1",
+    "mongoose": "5.9.1"
+  },
+  "peerDependencies": {
+    "casbin": "^4.1.1"
   },
   "husky": {
     "hooks": {
+      "prepare-commit-msg": "exec < /dev/tty && git cz --hook || true",
       "pre-commit": "npm run lint"
+    }
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
     }
   }
 }
