@@ -34,6 +34,11 @@ So, if you want to have a possibility to wait until connection successful, use n
 | uri | <code>String</code> |  | Mongo URI where casbin rules must be persisted |
 | [options] | <code>Object</code> | <code>{}</code> | Additional options to pass on to mongoose client |
 
+**Example**  
+```js
+const adapter = new MongooseAdapter('MONGO_URI');
+const adapter = new MongooseAdapter('MONGO_URI', { mongoose_options: 'here' })
+```
 <a name="MongooseAdapter+setFiltered"></a>
 
 ### mongooseAdapter.setFiltered([isFiltered])
@@ -102,6 +107,9 @@ This method is used by casbin and should not be called by user.
 
 ### mongooseAdapter.savePolicy(model) ⇒ <code>Promise.&lt;Boolean&gt;</code>
 Implements the process of saving policy from enforcer into database.
+If you are using replica sets with mongo, this function will use mongo
+transaction, so every line in the policy needs tosucceed for this to
+take effect.
 This method is used by casbin and should not be called by user.
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  

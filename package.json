@@ -1,6 +1,6 @@
 {
   "name": "casbin-mongoose-adapter",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Mongoose adapter for Casbin",
   "main": "src/adapter.js",
   "license": "Apache-2.0",
@@ -63,9 +63,9 @@
     "eslint-plugin-promise": "4.2.1",
     "eslint-plugin-standard": "4.0.1",
     "husky": "4.2.3",
-    "nyc": "15.0.0",
     "jsdoc-to-markdown": "5.0.3",
-    "mocha": "7.0.1"
+    "mocha": "7.0.1",
+    "nyc": "15.0.0"
   },
   "dependencies": {
     "casbin": "4.1.1",
