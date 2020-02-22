@@ -21,8 +21,9 @@ Based on [Officially Supported Databases](https://mongoosejs.com/docs/), The cur
 Install the package as dependency in your project:
 
 ```bash
-npm install --save casbin-mongoose-adapter
+npm install --save casbin-mongoose-adapter casbin
 ```
+**Note**: `casbin` as peerDependencies!
 
 Require it in a place, where you are instantiating an enforcer ([read more about enforcer here](https://github.com/casbin/node-casbin#get-started)):
 
