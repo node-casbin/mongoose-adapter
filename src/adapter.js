@@ -44,6 +44,7 @@ class MongooseAdapter {
     this.useTransaction = false;
     this.uri = uri;
     this.options = options;
+    this.debug = false;
   }
 
   async _open () {
@@ -93,6 +94,27 @@ class MongooseAdapter {
   }
 
   /**
+   * Creates a new instance of mongoose adapter for casbin.
+   * It does the same as newAdapter, but it checks wether database is a replica set. If it is, it enables
+   * transactions for the adapter.
+   * Transactions are never commited automatically. You have to use commitTransaction to add pending changes.
+   *
+   * @static
+   * @param {String} uri Mongo URI where casbin rules must be persisted
+   * @param {Object} [options={}] Additional options to pass on to mongoose client
+   * @example
+   * const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI');
+   * const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI', { mongoose_options: 'here' });
+   */
+  static async newSyncedAdapter (uri, options = {}) {
+    if (typeof uri !== 'string' || !uri.includes('replicaSet')) {
+      throw new Error('You must provide Mongo URI with replicaSet attribute to connect with synced adapter!');
+    }
+    const adapter = await MongooseAdapter.newAdapter(uri, options, false, true);
+    return adapter;
+  }
+
+  /**
    * Switch adapter to (non)filtered state.
    * Casbin uses this flag to determine if it should load the whole policy from DB or not.
    *
@@ -103,7 +125,47 @@ class MongooseAdapter {
   }
 
   setTransaction (transactioned = true) {
-    this.useTransaction = transactioned;
+    const conn = this.mongoseInstance.connections[0];
+    if (!transactioned) this.useTransaction = transactioned;
+    else if (conn && conn.replica) this.useTransaction = transactioned;
+    else throw Error('Tried to enable transactions for non-replicaset connection');
+  }
+
+  async getSession () {
+    if (this.useTransaction) {
+      this.session = this.session && !this.session.hasEnded() ? this.session : await CasbinRule.startSession();
+      return this.session;
+    } else throw Error('Tried to start a session for non-replicaset connection');
+  }
+
+  async getTransaction () {
+    if (this.useTransaction) {
+      try {
+        const session = await this.getSession();
+        await session.startTransaction();
+        return session;
+      } catch (error) {
+        if (!error.message !== 'Transaction already in progress on this session.') throw error;
+      }
+    } else throw Error('Tried to start a session for non-replicaset connection');
+  }
+
+  async commitTransaction () {
+    if (this.useTransaction) {
+      const session = await this.getSession();
+      await session.commitTransaction();
+    } else throw Error('Tried to start a session for non-replicaset connection');
+  }
+
+  async abortTransaction () {
+    if (this.useTransaction) {
+      const session = await this.getSession();
+      await session.abortTransaction();
+    } else throw Error('Tried to start a session for non-replicaset connection');
+  }
+
+  setDebug () {
+    this.debug = true;
   }
 
   /**
@@ -167,8 +229,9 @@ class MongooseAdapter {
     } else {
       this.setFiltered(false);
     }
-
-    const lines = await CasbinRule.find(filter || {});
+    const options = {};
+    if (this.useTransaction) options.session = await this.getTransaction();
+    const lines = await CasbinRule.find(filter || {}, null, options);
     for (const line of lines) {
       this.loadPolicyLine(line, model);
     }
@@ -223,19 +286,9 @@ class MongooseAdapter {
    * @returns {Promise<Boolean>}
    */
   async savePolicy (model) {
-    const conn = this.mongoseInstance.connections[0];
-    if (conn && !conn.replica) {
-      console.warn('casbin-mongoose-adapter: MongoDB currently only supports transactions on replica sets, not standalone servers.');
-      if (this.useTransaction) {
-        console.warn('If you do not care set useTransaction option to false in casbin-mongoose-adapter');
-        return false;
-      }
-    }
-
-    let session;
+    const options = {};
     if (this.useTransaction) {
-      session = await CasbinRule.startSession();
-      session.startTransaction();
+      options.session = await this.getTransaction();
     }
 
     try {
@@ -255,13 +308,12 @@ class MongooseAdapter {
         }
       }
 
-      await CasbinRule.collection.insertMany(lines, session ? { session: session } : null);
-      session && await session.commitTransaction();
+      await CasbinRule.collection.insertMany(lines, options);
     } catch (err) {
-      session && await session.abortTransaction();
+      options.session && await options.session.abortTransaction();
       throw err;
     } finally {
-      session && await session.endSession();
+      if (options.session && this.debug) console.log('Lines added to transaction, but it\'s not commited yet.');
     }
 
     return true;
@@ -278,7 +330,10 @@ class MongooseAdapter {
    */
   async addPolicy (sec, ptype, rule) {
     const line = this.savePolicyLine(ptype, rule);
-    await line.save();
+    const options = {};
+    if (this.useTransaction) options.session = await this.getTransaction();
+    await line.save(options);
+    if (this.useTransaction && this.debug) console.log('Line added to transaction, but it\'s not commited yet.');
   }
 
   /**
@@ -292,7 +347,10 @@ class MongooseAdapter {
    */
   async removePolicy (sec, ptype, rule) {
     const { p_type, v0, v1, v2, v3, v4, v5 } = this.savePolicyLine(ptype, rule);
-    await CasbinRule.deleteMany({ p_type, v0, v1, v2, v3, v4, v5 });
+    const options = {};
+    if (this.useTransaction) options.session = await this.getTransaction();
+    await CasbinRule.deleteMany({ p_type, v0, v1, v2, v3, v4, v5 }, options);
+    if (this.useTransaction && this.debug) console.log('Line added to transaction, but it\'s not commited yet.');
   }
 
   /**
@@ -331,12 +389,15 @@ class MongooseAdapter {
     if (fieldIndex <= 5 && fieldIndex + fieldValues.length > 5 && fieldValues[5 - fieldIndex]) {
       where.v5 = fieldValues[5 - fieldIndex];
     }
-
-    await CasbinRule.deleteMany(where);
+    const options = {};
+    if (this.useTransaction) options.session = await this.getTransaction();
+    await CasbinRule.deleteMany(where, options);
+    if (this.useTransaction && this.debug) console.log('Lines deleted in transaction, but it\'s not commited yet.');
   }
 
   async close () {
     if (this.mongoseInstance && this.mongoseInstance.connection) {
+      if (this.session) await this.session.endSession();
       await this.mongoseInstance.connection.close();
     }
   }

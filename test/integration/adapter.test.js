@@ -194,18 +194,11 @@ describe('MongooseAdapter', () => {
   });
 
   it('Should properly fail when transaction is set to true', async () => {
-    const a = await createAdapter(true);
-    // Because the DB is empty at first,
-    // so we need to load the policy from the file adapter (.CSV) first.
-    const e = await newEnforcer(rbacModel, rbacPolicy);
-
-    const rulesBefore = await CasbinRule.find({});
-    assert.equal(rulesBefore.length, 0);
-
-    // This is a trick to save the current policy to the DB.
-    // We can't call e.savePolicy() because the adapter in the enforcer is still the file adapter.
-    // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
-    assert.isFalse(await a.savePolicy(e.getModel()));
+    try {
+      await createAdapter(true);
+    } catch (error) {
+      assert.equal(error, 'Error: Tried to enable transactions for non-replicaset connection');
+    }
   });
 
   it('Should properly delete existing policy rules', async () => {
