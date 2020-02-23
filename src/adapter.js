@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const { Helper } = require('casbin');
-const mongoose = require('mongoose');
-const CasbinRule = require('./model');
+const { Helper } = require('casbin')
+const mongoose = require('mongoose')
+const CasbinRule = require('./model')
 
 /**
  * Implements a policy adapter for casbin with MongoDB support.
@@ -36,22 +36,26 @@ class MongooseAdapter {
    */
   constructor (uri, options = {}) {
     if (!uri || typeof uri !== 'string') {
-      throw new Error('You must provide Mongo URI to connect to!');
+      throw new Error('You must provide Mongo URI to connect to!')
     }
 
     // by default, adapter is not filtered
-    this.isFiltered = false;
-    this.useTransaction = false;
-    this.uri = uri;
-    this.options = options;
-    this.debug = false;
+    this.isFiltered = false
+    this.isSynced = false
+    this.uri = uri
+    this.options = options
+    this.debug = false
   }
 
+  /**
+   * Opens a connection to mongoDB
+   * @returns {Promise<void>}
+   */
   async _open () {
     await mongoose.connect(this.uri, this.options)
       .then(instance => {
-        this.mongoseInstance = instance;
-      });
+        this.mongoseInstance = instance
+      })
   }
 
   /**
@@ -66,12 +70,12 @@ class MongooseAdapter {
    * const adapter = await MongooseAdapter.newAdapter('MONGO_URI');
    * const adapter = await MongooseAdapter.newAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
-  static async newAdapter (uri, options = {}, filtered = false, useTransaction = false) {
-    const adapter = new MongooseAdapter(uri, options);
-    await adapter._open();
-    adapter.setFiltered(filtered);
-    adapter.setTransaction(useTransaction);
-    return adapter;
+  static async newAdapter (uri, options = {}, filtered = false, synced = false) {
+    const adapter = new MongooseAdapter(uri, options)
+    await adapter._open()
+    adapter.setFiltered(filtered)
+    adapter.setSynced(synced)
+    return adapter
   }
 
   /**
@@ -87,10 +91,10 @@ class MongooseAdapter {
    * const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
   static async newFilteredAdapter (uri, options = {}) {
-    const adapter = await MongooseAdapter.newAdapter(uri, options, true);
-    await adapter._open();
+    const adapter = await MongooseAdapter.newAdapter(uri, options, true)
+    await adapter._open()
 
-    return adapter;
+    return adapter
   }
 
   /**
@@ -108,10 +112,10 @@ class MongooseAdapter {
    */
   static async newSyncedAdapter (uri, options = {}) {
     if (typeof uri !== 'string' || !uri.includes('replicaSet')) {
-      throw new Error('You must provide Mongo URI with replicaSet attribute to connect with synced adapter!');
+      throw new Error('You must provide Mongo URI with replicaSet attribute to connect with synced adapter!')
     }
-    const adapter = await MongooseAdapter.newAdapter(uri, options, false, true);
-    return adapter;
+    const adapter = await MongooseAdapter.newAdapter(uri, options, false, true)
+    return adapter
   }
 
   /**
@@ -121,51 +125,71 @@ class MongooseAdapter {
    * @param {Boolean} [isFiltered=true] Flag that represents the current state of adapter (filtered or not)
    */
   setFiltered (isFiltered = true) {
-    this.isFiltered = isFiltered;
+    this.isFiltered = isFiltered
   }
 
-  setTransaction (transactioned = true) {
-    const conn = this.mongoseInstance.connections[0];
-    if (!transactioned) this.useTransaction = transactioned;
-    else if (conn && conn.replica) this.useTransaction = transactioned;
-    else throw Error('Tried to enable transactions for non-replicaset connection');
+  /**
+   * SyncedAdapter: Switch adapter to (non)synced state.
+   * This enables mongoDB transactions when loading and saving policies to DB.
+   *
+   * @param {Boolean} [synced=true] Flag that represents the current state of adapter (filtered or not)
+   */
+  setSynced (synced = true) {
+    const conn = this.mongoseInstance.connections[0]
+    if (!synced) this.isSynced = synced
+    else if (conn && conn.replica) this.isSynced = synced
+    else throw Error('Tried to enable transactions for non-replicaset connection')
   }
 
+  /**
+   * SyncedAdapter: Gets active session or starts a new one. Sessions are used to handle transactions.
+   * @returns {Promise<Session>}
+   */
   async getSession () {
-    if (this.useTransaction) {
-      this.session = this.session && !this.session.hasEnded() ? this.session : await CasbinRule.startSession();
-      return this.session;
-    } else throw Error('Tried to start a session for non-replicaset connection');
+    if (this.isSynced) {
+      return this.session && !this.session.hasEnded() ? this.session : CasbinRule.startSession()
+    } else throw Error('Tried to start a session for non-replicaset connection')
   }
 
+  /**
+   * SyncedAdapter: Gets active transaction or starts a new one. Transaction must be closed before changes are done
+   * to the database. See: commitTransaction, abortTransaction
+   * @returns {Promise<Session>} Returns a session with active transaction
+   */
   async getTransaction () {
-    if (this.useTransaction) {
-      try {
-        const session = await this.getSession();
-        await session.startTransaction();
-        return session;
-      } catch (error) {
-        if (!error.message !== 'Transaction already in progress on this session.') throw error;
-      }
-    } else throw Error('Tried to start a session for non-replicaset connection');
+    if (this.isSynced) {
+      const session = await this.getSession()
+      if (!session._serverSession.isTxnActive()) await session.startTransaction()
+      return session
+    } else throw Error('Tried to start a session for non-replicaset connection')
   }
 
+  /**
+   * SyncedAdapter: Commits active transaction. Documents are not saved before this function is used.
+   * Transaction closes after the use of this function.
+   * @returns {Promise<void>}
+   */
   async commitTransaction () {
-    if (this.useTransaction) {
-      const session = await this.getSession();
-      await session.commitTransaction();
-    } else throw Error('Tried to start a session for non-replicaset connection');
+    if (this.isSynced) {
+      const session = await this.getSession()
+      await session.commitTransaction()
+    } else throw Error('Tried to start a session for non-replicaset connection')
   }
 
+  /**
+   * SyncedAdapter: Aborts active transaction. All Document changes within this transaction are reverted.
+   * Transaction closes after the use of this function.
+   * @returns {Promise<void>}
+   */
   async abortTransaction () {
-    if (this.useTransaction) {
-      const session = await this.getSession();
-      await session.abortTransaction();
-    } else throw Error('Tried to start a session for non-replicaset connection');
+    if (this.isSynced) {
+      const session = await this.getSession()
+      await session.abortTransaction()
+    } else throw Error('Tried to start a session for non-replicaset connection')
   }
 
   setDebug () {
-    this.debug = true;
+    this.debug = true
   }
 
   /**
@@ -176,33 +200,33 @@ class MongooseAdapter {
    * @param {Object} model Casbin model to which policy rule must be loaded
    */
   loadPolicyLine (line, model) {
-    let lineText = line.p_type;
+    let lineText = line.p_type
 
     if (line.v0) {
-      lineText += ', ' + line.v0;
+      lineText += ', ' + line.v0
     }
 
     if (line.v1) {
-      lineText += ', ' + line.v1;
+      lineText += ', ' + line.v1
     }
 
     if (line.v2) {
-      lineText += ', ' + line.v2;
+      lineText += ', ' + line.v2
     }
 
     if (line.v3) {
-      lineText += ', ' + line.v3;
+      lineText += ', ' + line.v3
     }
 
     if (line.v4) {
-      lineText += ', ' + line.v4;
+      lineText += ', ' + line.v4
     }
 
     if (line.v5) {
-      lineText += ', ' + line.v5;
+      lineText += ', ' + line.v5
     }
 
-    Helper.loadPolicyLine(lineText, model);
+    Helper.loadPolicyLine(lineText, model)
   }
 
   /**
@@ -213,7 +237,7 @@ class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async loadPolicy (model) {
-    return this.loadFilteredPolicy(model);
+    return this.loadFilteredPolicy(model)
   }
 
   /**
@@ -225,15 +249,15 @@ class MongooseAdapter {
    */
   async loadFilteredPolicy (model, filter) {
     if (filter) {
-      this.setFiltered(true);
+      this.setFiltered(true)
     } else {
-      this.setFiltered(false);
+      this.setFiltered(false)
     }
-    const options = {};
-    if (this.useTransaction) options.session = await this.getTransaction();
-    const lines = await CasbinRule.find(filter || {}, null, options);
+    const options = {}
+    if (this.isSynced) options.session = await this.getTransaction()
+    const lines = await CasbinRule.find(filter || {}, null, options)
     for (const line of lines) {
-      this.loadPolicyLine(line, model);
+      this.loadPolicyLine(line, model)
     }
   }
 
@@ -246,33 +270,33 @@ class MongooseAdapter {
    * @returns {Object} Returns a created CasbinRule record for MongoDB
    */
   savePolicyLine (ptype, rule) {
-    const model = new CasbinRule({ p_type: ptype });
+    const model = new CasbinRule({ p_type: ptype })
 
     if (rule.length > 0) {
-      model.v0 = rule[0];
+      model.v0 = rule[0]
     }
 
     if (rule.length > 1) {
-      model.v1 = rule[1];
+      model.v1 = rule[1]
     }
 
     if (rule.length > 2) {
-      model.v2 = rule[2];
+      model.v2 = rule[2]
     }
 
     if (rule.length > 3) {
-      model.v3 = rule[3];
+      model.v3 = rule[3]
     }
 
     if (rule.length > 4) {
-      model.v4 = rule[4];
+      model.v4 = rule[4]
     }
 
     if (rule.length > 5) {
-      model.v5 = rule[5];
+      model.v5 = rule[5]
     }
 
-    return model;
+    return model
   }
 
   /**
@@ -286,37 +310,35 @@ class MongooseAdapter {
    * @returns {Promise<Boolean>}
    */
   async savePolicy (model) {
-    const options = {};
-    if (this.useTransaction) {
-      options.session = await this.getTransaction();
-    }
+    const options = {}
+    if (this.isSynced) options.session = await this.getTransaction()
 
     try {
-      const lines = [];
-      const policyRuleAST = model.model.get('p') instanceof Map ? model.model.get('p') : new Map();
-      const groupingPolicyAST = model.model.get('g') instanceof Map ? model.model.get('g') : new Map();
+      const lines = []
+      const policyRuleAST = model.model.get('p') instanceof Map ? model.model.get('p') : new Map()
+      const groupingPolicyAST = model.model.get('g') instanceof Map ? model.model.get('g') : new Map()
 
       for (const [ptype, ast] of policyRuleAST) {
         for (const rule of ast.policy) {
-          lines.push(this.savePolicyLine(ptype, rule));
+          lines.push(this.savePolicyLine(ptype, rule))
         }
       }
 
       for (const [ptype, ast] of groupingPolicyAST) {
         for (const rule of ast.policy) {
-          lines.push(this.savePolicyLine(ptype, rule));
+          lines.push(this.savePolicyLine(ptype, rule))
         }
       }
 
-      await CasbinRule.collection.insertMany(lines, options);
+      await CasbinRule.collection.insertMany(lines, options)
     } catch (err) {
-      options.session && await options.session.abortTransaction();
-      throw err;
+      options.session && await options.session.abortTransaction()
+      throw err
     } finally {
-      if (options.session && this.debug) console.log('Lines added to transaction, but it\'s not commited yet.');
+      if (options.session && this.debug) console.log('Lines added to transaction, but it\'s not commited yet.')
     }
 
-    return true;
+    return true
   }
 
   /**
@@ -329,11 +351,11 @@ class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async addPolicy (sec, ptype, rule) {
-    const line = this.savePolicyLine(ptype, rule);
-    const options = {};
-    if (this.useTransaction) options.session = await this.getTransaction();
-    await line.save(options);
-    if (this.useTransaction && this.debug) console.log('Line added to transaction, but it\'s not commited yet.');
+    const line = this.savePolicyLine(ptype, rule)
+    const options = {}
+    if (this.isSynced) options.session = await this.getTransaction()
+    await line.save(options)
+    if (this.isSynced && this.debug) console.log('Line added to transaction, but it\'s not commited yet.')
   }
 
   /**
@@ -346,11 +368,11 @@ class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async removePolicy (sec, ptype, rule) {
-    const { p_type, v0, v1, v2, v3, v4, v5 } = this.savePolicyLine(ptype, rule);
-    const options = {};
-    if (this.useTransaction) options.session = await this.getTransaction();
-    await CasbinRule.deleteMany({ p_type, v0, v1, v2, v3, v4, v5 }, options);
-    if (this.useTransaction && this.debug) console.log('Line added to transaction, but it\'s not commited yet.');
+    const { p_type, v0, v1, v2, v3, v4, v5 } = this.savePolicyLine(ptype, rule)
+    const options = {}
+    if (this.isSynced) options.session = await this.getTransaction()
+    await CasbinRule.deleteMany({ p_type, v0, v1, v2, v3, v4, v5 }, options)
+    if (this.isSynced && this.debug) console.log('Line added to transaction, but it\'s not commited yet.')
   }
 
   /**
@@ -364,43 +386,43 @@ class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async removeFilteredPolicy (sec, ptype, fieldIndex, ...fieldValues) {
-    const where = ptype ? { p_type: ptype } : {};
+    const where = ptype ? { p_type: ptype } : {}
 
     if (fieldIndex <= 0 && fieldIndex + fieldValues.length > 0 && fieldValues[0 - fieldIndex]) {
-      where.v0 = fieldValues[0 - fieldIndex];
+      where.v0 = fieldValues[0 - fieldIndex]
     }
 
     if (fieldIndex <= 1 && fieldIndex + fieldValues.length > 1 && fieldValues[1 - fieldIndex]) {
-      where.v1 = fieldValues[1 - fieldIndex];
+      where.v1 = fieldValues[1 - fieldIndex]
     }
 
     if (fieldIndex <= 2 && fieldIndex + fieldValues.length > 2 && fieldValues[2 - fieldIndex]) {
-      where.v2 = fieldValues[2 - fieldIndex];
+      where.v2 = fieldValues[2 - fieldIndex]
     }
 
     if (fieldIndex <= 3 && fieldIndex + fieldValues.length > 3 && fieldValues[3 - fieldIndex]) {
-      where.v3 = fieldValues[3 - fieldIndex];
+      where.v3 = fieldValues[3 - fieldIndex]
     }
 
     if (fieldIndex <= 4 && fieldIndex + fieldValues.length > 4 && fieldValues[4 - fieldIndex]) {
-      where.v4 = fieldValues[4 - fieldIndex];
+      where.v4 = fieldValues[4 - fieldIndex]
     }
 
     if (fieldIndex <= 5 && fieldIndex + fieldValues.length > 5 && fieldValues[5 - fieldIndex]) {
-      where.v5 = fieldValues[5 - fieldIndex];
+      where.v5 = fieldValues[5 - fieldIndex]
     }
-    const options = {};
-    if (this.useTransaction) options.session = await this.getTransaction();
-    await CasbinRule.deleteMany(where, options);
-    if (this.useTransaction && this.debug) console.log('Lines deleted in transaction, but it\'s not commited yet.');
+    const options = {}
+    if (this.isSynced) options.session = await this.getTransaction()
+    await CasbinRule.deleteMany(where, options)
+    if (this.isSynced && this.debug) console.log('Lines deleted in transaction, but it\'s not commited yet.')
   }
 
   async close () {
     if (this.mongoseInstance && this.mongoseInstance.connection) {
-      if (this.session) await this.session.endSession();
-      await this.mongoseInstance.connection.close();
+      if (this.session) await this.session.endSession()
+      await this.mongoseInstance.connection.close()
     }
   }
 }
 
-module.exports = MongooseAdapter;
+module.exports = MongooseAdapter

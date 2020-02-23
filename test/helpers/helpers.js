@@ -12,32 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const path = require('path');
-const { newEnforcer } = require('casbin');
-const MongooseAdapter = require('../../src/adapter');
-const basicModel = path.resolve(__dirname, '../fixtures/basic_model.conf');
-const basicPolicy = path.resolve(__dirname, '../fixtures/basic_policy.csv');
-const rbacModel = path.resolve(__dirname, '../fixtures/rbac_model.conf');
-const rbacPolicy = path.resolve(__dirname, '../fixtures/rbac_policy.csv');
+const path = require('path')
+const { newEnforcer } = require('casbin')
+const MongooseAdapter = require('../../src/adapter')
+const basicModel = path.resolve(__dirname, '../fixtures/basic_model.conf')
+const basicPolicy = path.resolve(__dirname, '../fixtures/basic_policy.csv')
+const rbacModel = path.resolve(__dirname, '../fixtures/rbac_model.conf')
+const rbacPolicy = path.resolve(__dirname, '../fixtures/rbac_policy.csv')
 
-const MONGOOSE_OPTIONS = { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true };
+const MONGOOSE_OPTIONS = { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true }
 
 async function createEnforcer () {
-  const adapter = await MongooseAdapter.newAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS);
+  const adapter = await MongooseAdapter.newAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS)
 
-  return newEnforcer(basicModel, adapter);
+  return newEnforcer(basicModel, adapter)
 };
 
 async function createAdapter (useTransaction = false) {
-  return MongooseAdapter.newAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS, false, useTransaction);
+  return MongooseAdapter.newAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS, false, useTransaction)
 };
 
 async function createSyncedAdapter () {
-  return MongooseAdapter.newSyncedAdapter('mongodb://localhost:27017,mongodb://localhost:27018,mongodb://localhost:27019/casbin?replicaSet=rs0', MONGOOSE_OPTIONS);
+  return MongooseAdapter.newSyncedAdapter('mongodb://localhost:27017,mongodb://localhost:27018,mongodb://localhost:27019/casbin?replicaSet=rs0', MONGOOSE_OPTIONS)
 };
 
 async function createDisconnectedAdapter () {
-  return new MongooseAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS);
+  return new MongooseAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS)
 };
 
-module.exports = { createEnforcer, createAdapter, createSyncedAdapter, createDisconnectedAdapter, basicModel, basicPolicy, rbacModel, rbacPolicy };
+module.exports = { createEnforcer, createAdapter, createSyncedAdapter, createDisconnectedAdapter, basicModel, basicPolicy, rbacModel, rbacPolicy }
