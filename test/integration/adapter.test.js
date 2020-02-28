@@ -14,7 +14,17 @@
 
 const { assert } = require('chai')
 const sinon = require('sinon')
-const { createEnforcer, createAdapter, createDisconnectedAdapter, basicModel, basicPolicy, rbacModel, rbacPolicy } = require('../helpers/helpers')
+const {
+  createEnforcer,
+  createAdapter,
+  createDisconnectedAdapter,
+  basicModel,
+  basicPolicy,
+  rbacModel,
+  rbacPolicy,
+  rbacDenyDomainModel,
+  rbacDenyDomainPolicy
+} = require('../helpers/helpers')
 const { newEnforcer, Model } = require('casbin')
 const CasbinRule = require('../../src/model')
 
@@ -361,6 +371,208 @@ describe('MongooseAdapter', () => {
     assert.deepEqual(await e.getPolicy(), [
       ['alice', 'data1', 'read'],
       ['bob', 'data2', 'write']])
+  })
+
+  it('Should properly store new complex policy rules from a file', async () => {
+    const a = await createAdapter()
+    // Because the DB is empty at first,
+    // so we need to load the policy from the file adapter (.CSV) first.
+    let e = await newEnforcer(rbacDenyDomainModel, rbacDenyDomainPolicy)
+
+    const rulesBefore = await CasbinRule.find({})
+    assert.equal(rulesBefore.length, 0)
+
+    // This is a trick to save the current policy to the DB.
+    // We can't call e.savePolicy() because the adapter in the enforcer is still the file adapter.
+    // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
+    await a.savePolicy(await e.getModel())
+    const rulesAfter = await CasbinRule.find({})
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
+      ['p', 'admin', 'domain1', 'data1', 'read', 'allow'],
+      ['p', 'admin', 'domain1', 'data1', 'write', 'allow'],
+      ['p', 'admin', 'domain2', 'data2', 'read', 'allow'],
+      ['p', 'admin', 'domain2', 'data2', 'write', 'allow'],
+      ['p', 'alice', 'domain2', 'data2', 'write', 'deny'],
+      ['g', 'alice', 'admin', 'domain2', undefined, undefined]])
+
+    // Clear the current policy.
+    await e.clearPolicy()
+    assert.deepEqual(await e.getPolicy(), [])
+
+    // Load the policy from DB.
+    await a.loadPolicy(e.getModel())
+    assert.deepEqual(await e.getPolicy(), [
+      ['admin', 'domain1', 'data1', 'read', 'allow'],
+      ['admin', 'domain1', 'data1', 'write', 'allow'],
+      ['admin', 'domain2', 'data2', 'read', 'allow'],
+      ['admin', 'domain2', 'data2', 'write', 'allow'],
+      ['alice', 'domain2', 'data2', 'write', 'deny']])
+
+    // Note: you don't need to look at the above code
+    // if you already have a working DB with policy inside.
+
+    // Now the DB has policy, so we can provide a normal use case.
+    // Create an adapter and an enforcer.
+    // newEnforcer() will load the policy automatically.
+    e = await newEnforcer(rbacDenyDomainModel, a)
+    assert.deepEqual(await e.getPolicy(), [
+      ['admin', 'domain1', 'data1', 'read', 'allow'],
+      ['admin', 'domain1', 'data1', 'write', 'allow'],
+      ['admin', 'domain2', 'data2', 'read', 'allow'],
+      ['admin', 'domain2', 'data2', 'write', 'allow'],
+      ['alice', 'domain2', 'data2', 'write', 'deny']])
+
+    // Add policy to DB
+    await a.addPolicy('', 'p', ['role', 'domain', 'res', 'action', 'allow'])
+    e = await newEnforcer(rbacDenyDomainModel, a)
+    assert.deepEqual(await e.getPolicy(), [
+      ['admin', 'domain1', 'data1', 'read', 'allow'],
+      ['admin', 'domain1', 'data1', 'write', 'allow'],
+      ['admin', 'domain2', 'data2', 'read', 'allow'],
+      ['admin', 'domain2', 'data2', 'write', 'allow'],
+      ['alice', 'domain2', 'data2', 'write', 'deny'],
+      ['role', 'domain', 'res', 'action', 'allow']])
+    // Remove policy from DB
+    await a.removePolicy('', 'p', ['role', 'domain', 'res', 'action', 'allow'])
+    e = await newEnforcer(rbacDenyDomainModel, a)
+    assert.deepEqual(await e.getPolicy(), [
+      ['admin', 'domain1', 'data1', 'read', 'allow'],
+      ['admin', 'domain1', 'data1', 'write', 'allow'],
+      ['admin', 'domain2', 'data2', 'read', 'allow'],
+      ['admin', 'domain2', 'data2', 'write', 'allow'],
+      ['alice', 'domain2', 'data2', 'write', 'deny']])
+    // Enforce a rule
+    assert.notOk(await e.enforce('alice', 'domain2', 'data2', 'write'))
+    assert.ok(await e.enforce('admin', 'domain2', 'data2', 'write'))
+    assert.ok(await e.enforce('admin', 'domain2', 'data2', 'write'))
+    assert.ok(await e.enforce('admin', 'domain2', 'data2', 'read'))
+    assert.ok(await e.enforce('alice', 'domain2', 'data2', 'read'))
+    assert.notOk(await e.enforce('alice', 'domain1', 'data1', 'read'))
+    assert.notOk(await e.enforce('alice', 'domain1', 'data1', 'write'))
+  })
+
+  it('Should remove related complex policy rules via a filter', async () => {
+    const a = await createAdapter()
+    // Because the DB is empty at first,
+    // so we need to load the policy from the file adapter (.CSV) first.
+    let e = await newEnforcer(rbacDenyDomainModel, rbacDenyDomainPolicy)
+
+    const rulesBefore = await CasbinRule.find({})
+    assert.equal(rulesBefore.length, 0)
+
+    // This is a trick to save the current policy to the DB.
+    // We can't call e.savePolicy() because the adapter in the enforcer is still the file adapter.
+    // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
+    await a.savePolicy(e.getModel())
+    let rulesAfter = await CasbinRule.find({})
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
+      ['p', 'admin', 'domain1', 'data1', 'read', 'allow'],
+      ['p', 'admin', 'domain1', 'data1', 'write', 'allow'],
+      ['p', 'admin', 'domain2', 'data2', 'read', 'allow'],
+      ['p', 'admin', 'domain2', 'data2', 'write', 'allow'],
+      ['p', 'alice', 'domain2', 'data2', 'write', 'deny'],
+      ['g', 'alice', 'admin', 'domain2', undefined, undefined]])
+    e = await newEnforcer(rbacDenyDomainModel, a)
+    assert.deepEqual(await e.getPolicy(), [['admin', 'domain1', 'data1', 'read', 'allow'],
+      ['admin', 'domain1', 'data1', 'write', 'allow'],
+      ['admin', 'domain2', 'data2', 'read', 'allow'],
+      ['admin', 'domain2', 'data2', 'write', 'allow'],
+      ['alice', 'domain2', 'data2', 'write', 'deny']])
+
+    // Remove 'data2_admin' related policy rules via a filter.
+    // Four rules:
+    // {'admin', 'domain1', 'data1', 'read', 'allow'},
+    // {'admin', 'domain1', 'data1', 'write', 'allow'},
+    // {'admin', 'domain2', 'data2', 'read', 'allow'},
+    // {'admin', 'domain2', 'data2', 'write', 'allow'}
+    // are deleted.
+    await a.removeFilteredPolicy(undefined, undefined, 0, 'admin')
+    rulesAfter = await CasbinRule.find({})
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
+      ['p', 'alice', 'domain2', 'data2', 'write', 'deny'],
+      ['g', 'alice', 'admin', 'domain2', undefined, undefined]])
+    e = await newEnforcer(rbacDenyDomainModel, a)
+    assert.deepEqual(await e.getPolicy(), [['alice', 'domain2', 'data2', 'write', 'deny']])
+    await a.removeFilteredPolicy(undefined, 'g')
+    rulesAfter = await CasbinRule.find({})
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
+      ['p', 'alice', 'domain2', 'data2', 'write', 'deny']])
+    await a.removeFilteredPolicy(undefined, 'p')
+    rulesAfter = await CasbinRule.find({})
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [])
+
+    // Reload the mode + policy
+    e = await newEnforcer(rbacDenyDomainModel, rbacDenyDomainPolicy)
+    await a.savePolicy(e.getModel())
+    // Remove 'domain2' related policy rules via a filter.
+    // Three rules:
+    // {'p', 'admin', 'domain2', 'data2', 'read', 'allow'},
+    // {'p', 'admin', 'domain2', 'data2', 'write', 'allow'},
+    // {'p', 'alice', 'domain2', 'data2', 'write', 'deny'}
+    // are deleted.
+    await a.removeFilteredPolicy(undefined, undefined, 1, 'domain2')
+    rulesAfter = await CasbinRule.find({})
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
+      ['p', 'admin', 'domain1', 'data1', 'read', 'allow'],
+      ['p', 'admin', 'domain1', 'data1', 'write', 'allow'],
+      ['g', 'alice', 'admin', 'domain2', undefined, undefined]])
+    e = await newEnforcer(rbacModel, a)
+    assert.deepEqual(await e.getPolicy(), [
+      ['admin', 'domain1', 'data1', 'read', 'allow'],
+      ['admin', 'domain1', 'data1', 'write', 'allow']])
+
+    // Remove 'data1' related policy rules via a filter.
+    // Two rules:
+    // {'admin', 'domain1', 'data1', 'read', 'allow'},
+    // {'admin', 'domain1', 'data1', 'write', 'allow'}
+    // are deleted.
+    await a.removeFilteredPolicy(undefined, undefined, 2, 'data1')
+    rulesAfter = await CasbinRule.find({})
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
+      ['g', 'alice', 'admin', 'domain2', undefined, undefined]])
+    e = await newEnforcer(rbacDenyDomainModel, a)
+    assert.deepEqual(await e.getPolicy(), [])
+
+    await a.removeFilteredPolicy(undefined, 'g')
+    await a.removeFilteredPolicy(undefined, 'p')
+    rulesAfter = await CasbinRule.find({})
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [])
+
+    e = await newEnforcer(rbacDenyDomainModel, rbacDenyDomainPolicy)
+    await a.savePolicy(e.getModel())
+
+    // Remove 'read' related policy rules via a filter.
+    // Two rules:
+    // {'admin', 'domain1', 'data1', 'read', 'allow'},
+    // {'admin', 'domain2', 'data2', 'read', 'allow'}
+    // are deleted.
+    await a.removeFilteredPolicy(undefined, undefined, 3, 'read')
+    rulesAfter = await CasbinRule.find({})
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
+      ['p', 'admin', 'domain1', 'data1', 'write', 'allow'],
+      ['p', 'admin', 'domain2', 'data2', 'write', 'allow'],
+      ['p', 'alice', 'domain2', 'data2', 'write', 'deny'],
+      ['g', 'alice', 'admin', 'domain2', undefined, undefined]])
+    e = await newEnforcer(rbacDenyDomainModel, a)
+    assert.deepEqual(await e.getPolicy(), [
+      ['admin', 'domain1', 'data1', 'write', 'allow'],
+      ['admin', 'domain2', 'data2', 'write', 'allow'],
+      ['alice', 'domain2', 'data2', 'write', 'deny']])
+
+    // Remove 'read' related policy rules via a filter.
+    // One rule:
+    // {'alice', 'domain2', 'data2', 'write', 'deny'},
+    // is deleted.
+    await a.removeFilteredPolicy(undefined, undefined, 4, 'deny')
+    rulesAfter = await CasbinRule.find({})
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
+      ['p', 'admin', 'domain1', 'data1', 'write', 'allow'],
+      ['p', 'admin', 'domain2', 'data2', 'write', 'allow'],
+      ['g', 'alice', 'admin', 'domain2', undefined, undefined]])
+    e = await newEnforcer(rbacDenyDomainModel, a)
+    assert.deepEqual(await e.getPolicy(), [
+      ['admin', 'domain1', 'data1', 'write', 'allow'],
+      ['admin', 'domain2', 'data2', 'write', 'allow']])
   })
 
   it('Should allow you to close the connection', async () => {

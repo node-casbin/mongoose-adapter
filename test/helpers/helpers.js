@@ -19,6 +19,8 @@ const basicModel = path.resolve(__dirname, '../fixtures/basic_model.conf')
 const basicPolicy = path.resolve(__dirname, '../fixtures/basic_policy.csv')
 const rbacModel = path.resolve(__dirname, '../fixtures/rbac_model.conf')
 const rbacPolicy = path.resolve(__dirname, '../fixtures/rbac_policy.csv')
+const rbacDenyDomainModel = path.resolve(__dirname, '../fixtures/rbac_with_domains_with_deny_model.conf')
+const rbacDenyDomainPolicy = path.resolve(__dirname, '../fixtures/rbac_with_domains_with_deny_policy.csv')
 
 const MONGOOSE_OPTIONS = { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true }
 
@@ -40,4 +42,4 @@ async function createDisconnectedAdapter () {
   return new MongooseAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS)
 };
 
-module.exports = { createEnforcer, createAdapter, createSyncedAdapter, createDisconnectedAdapter, basicModel, basicPolicy, rbacModel, rbacPolicy }
+module.exports = { createEnforcer, createAdapter, createSyncedAdapter, createDisconnectedAdapter, basicModel, basicPolicy, rbacModel, rbacPolicy, rbacDenyDomainModel, rbacDenyDomainPolicy }
