@@ -44,7 +44,6 @@ class MongooseAdapter {
     this.isSynced = false
     this.uri = uri
     this.options = options
-    this.debug = false
   }
 
   /**
@@ -159,7 +158,10 @@ class MongooseAdapter {
   async getTransaction () {
     if (this.isSynced) {
       const session = await this.getSession()
-      if (!session._serverSession.isTxnActive()) await session.startTransaction()
+      if (!session._serverSession.isTxnActive()) {
+        await session.startTransaction()
+        console.warn('Transaction started. To commit changes use adapter.commitTransaction() or to abort use adapter.abortTransaction()')
+      }
       return session
     } else throw Error('Tried to start a session for non-replicaset connection')
   }
@@ -185,11 +187,8 @@ class MongooseAdapter {
     if (this.isSynced) {
       const session = await this.getSession()
       await session.abortTransaction()
+      console.warn('Transaction aborted')
     } else throw Error('Tried to start a session for non-replicaset connection')
-  }
-
-  setDebug () {
-    this.debug = true
   }
 
   /**
@@ -335,8 +334,6 @@ class MongooseAdapter {
       options.session && await options.session.abortTransaction()
       console.error(err)
       return false
-    } finally {
-      if (options.session && this.debug) console.log('Lines added to transaction, but it\'s not commited yet.')
     }
 
     return true
@@ -356,7 +353,6 @@ class MongooseAdapter {
     const options = {}
     if (this.isSynced) options.session = await this.getTransaction()
     await line.save(options)
-    if (this.isSynced && this.debug) console.log('Line added to transaction, but it\'s not commited yet.')
   }
 
   /**
@@ -373,7 +369,6 @@ class MongooseAdapter {
     const options = {}
     if (this.isSynced) options.session = await this.getTransaction()
     await CasbinRule.deleteMany({ p_type, v0, v1, v2, v3, v4, v5 }, options)
-    if (this.isSynced && this.debug) console.log('Line added to transaction, but it\'s not commited yet.')
   }
 
   /**
@@ -415,7 +410,6 @@ class MongooseAdapter {
     const options = {}
     if (this.isSynced) options.session = await this.getTransaction()
     await CasbinRule.deleteMany(where, options)
-    if (this.isSynced && this.debug) console.log('Lines deleted in transaction, but it\'s not commited yet.')
   }
 
   async close () {
