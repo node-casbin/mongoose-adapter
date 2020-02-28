@@ -14,7 +14,7 @@
 
 const { assert } = require('chai')
 const { createEnforcer, createAdapter, createDisconnectedAdapter, basicModel, basicPolicy, rbacModel, rbacPolicy } = require('../helpers/helpers')
-const { newEnforcer } = require('casbin')
+const { newEnforcer, Model } = require('casbin')
 const CasbinRule = require('../../src/model')
 
 // These tests are just smoke tests for get/set policy rules
@@ -166,6 +166,11 @@ describe('MongooseAdapter', () => {
       ['alice', 'data1', 'read'],
       ['bob', 'data2', 'write']
     ])
+  })
+
+  it('Empty Policy return false', async () => {
+    const a = await createAdapter()
+    assert.isNotOk(await a.savePolicy(new Model()))
   })
 
   it('Should not store new policy rules if one of them fails', async () => {

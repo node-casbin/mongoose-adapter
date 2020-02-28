@@ -333,7 +333,8 @@ class MongooseAdapter {
       await CasbinRule.collection.insertMany(lines, options)
     } catch (err) {
       options.session && await options.session.abortTransaction()
-      throw err
+      console.error(err)
+      return false
     } finally {
       if (options.session && this.debug) console.log('Lines added to transaction, but it\'s not commited yet.')
     }
