@@ -13,6 +13,7 @@
 // limitations under the License.
 
 const { assert } = require('chai')
+const sinon = require('sinon')
 const { createEnforcer, createAdapter, createDisconnectedAdapter, basicModel, basicPolicy, rbacModel, rbacPolicy } = require('../helpers/helpers')
 const { newEnforcer, Model } = require('casbin')
 const CasbinRule = require('../../src/model')
@@ -168,9 +169,13 @@ describe('MongooseAdapter', () => {
     ])
   })
 
-  it('Empty Policy return false', async () => {
+  it('Empty Policy return false and log an error', async () => {
     const a = await createAdapter()
+    console.error = sinon.stub()
     assert.isNotOk(await a.savePolicy(new Model()))
+    assert(console.error.lastCall.firstArg.name, 'MongoError')
+    assert(console.error.callCount, 1)
+    if (console.log.restore) console.error.restore()
   })
 
   it('Should not store new policy rules if one of them fails', async () => {
