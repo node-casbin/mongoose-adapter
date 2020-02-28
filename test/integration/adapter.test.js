@@ -18,6 +18,7 @@ const {
   createEnforcer,
   createAdapter,
   createDisconnectedAdapter,
+  createFailingSyncedAdapter,
   basicModel,
   basicPolicy,
   rbacModel,
@@ -573,6 +574,65 @@ describe('MongooseAdapter', () => {
     assert.deepEqual(await e.getPolicy(), [
       ['admin', 'domain1', 'data1', 'write', 'allow'],
       ['admin', 'domain2', 'data2', 'write', 'allow']])
+  })
+
+  it('SyncedAdapter should fail when connecting to non-replicaset database', async () => {
+    // Create SyncedMongoAdapter
+    try {
+      await createFailingSyncedAdapter()
+    } catch (error) {
+      assert(error.message, 'You must provide Mongo URI with replicaSet attribute to connect with synced adapter!')
+    }
+  })
+
+  it('SetSynced should fail in non-replicaset connection', async () => {
+    // Create SyncedMongoAdapter
+    try {
+      const adapter = await createAdapter()
+      adapter.setSynced(true)
+    } catch (error) {
+      assert(error.message, 'Tried to enable transactions for non-replicaset connection')
+    }
+  })
+
+  it('getSession should fail in non-replicaset connection', async () => {
+    // Create SyncedMongoAdapter
+    try {
+      const adapter = await createAdapter()
+      adapter.getSession()
+    } catch (error) {
+      assert(error.message, 'Tried to start a session for non-replicaset connection')
+    }
+  })
+
+  it('getTransaction should fail in non-replicaset connection', async () => {
+    // Create SyncedMongoAdapter
+    try {
+      const adapter = await createAdapter()
+      adapter.getTransaction()
+    } catch (error) {
+      assert(error.message, 'Tried to start a session for non-replicaset connection')
+    }
+  })
+
+  it('commitTransaction should fail in non-replicaset connection', async () => {
+    // Create SyncedMongoAdapter
+    try {
+      const adapter = await createAdapter()
+      adapter.commitTransaction()
+    } catch (error) {
+      assert(error.message, 'Tried to start a session for non-replicaset connection')
+    }
+  })
+
+  it('abortTransaction should fail in non-replicaset connection', async () => {
+    // Create SyncedMongoAdapter
+    try {
+      const adapter = await createAdapter()
+      adapter.abortTransaction()
+    } catch (error) {
+      assert(error.message, 'Tried to start a session for non-replicaset connection')
+    }
   })
 
   it('Should allow you to close the connection', async () => {

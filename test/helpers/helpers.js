@@ -38,8 +38,24 @@ async function createSyncedAdapter () {
   return MongooseAdapter.newSyncedAdapter('mongodb://localhost:27017,mongodb://localhost:27018,mongodb://localhost:27019/casbin?replicaSet=rs0', MONGOOSE_OPTIONS)
 };
 
+async function createFailingSyncedAdapter () {
+  return MongooseAdapter.newSyncedAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS)
+};
+
 async function createDisconnectedAdapter () {
   return new MongooseAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS)
 };
 
-module.exports = { createEnforcer, createAdapter, createSyncedAdapter, createDisconnectedAdapter, basicModel, basicPolicy, rbacModel, rbacPolicy, rbacDenyDomainModel, rbacDenyDomainPolicy }
+module.exports = {
+  createEnforcer,
+  createAdapter,
+  createSyncedAdapter,
+  createFailingSyncedAdapter,
+  createDisconnectedAdapter,
+  basicModel,
+  basicPolicy,
+  rbacModel,
+  rbacPolicy,
+  rbacDenyDomainModel,
+  rbacDenyDomainPolicy
+}
