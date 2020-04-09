@@ -1,6 +1,6 @@
 {
-  "name": "casbin-mongoose-adapter",
-  "version": "2.1.0",
+  "name": "@beamnetwork/casbin-mongoose-adapter",
+  "version": "2.2.1",
   "description": "Mongoose adapter for Casbin",
   "main": "src/adapter.js",
   "license": "Apache-2.0",
@@ -46,7 +46,7 @@
   "scripts": {
     "docs": "jsdoc2md \"src/**/*.js\" > ./API.md",
     "lint": "eslint .",
-    "prepublishOnly": "npm run lint && npm run test && npm run docs",
+    "prepublishOnly": "npm run lint && npm run test:unit && npm run test:integration && npm run docs",
     "test:integration": "nyc mocha -- --config test/integration/.mocharc.js",
     "test:unit": "nyc mocha -- --config test/unit/.mocharc.js",
     "coverage": "nyc mocha -- --config test/.mocharc.js"

@@ -10,6 +10,7 @@ Implements a policy adapter for casbin with MongoDB support.
     * _instance_
         * [.setFiltered([isFiltered])](#MongooseAdapter+setFiltered)
         * [.loadPolicyLine(line, model)](#MongooseAdapter+loadPolicyLine)
+        * [.wipePolicy()](#MongooseAdapter+wipePolicy) ⇒ <code>Promise.&lt;void&gt;</code>
         * [.loadPolicy(model)](#MongooseAdapter+loadPolicy) ⇒ <code>Promise.&lt;void&gt;</code>
         * [.loadFilteredPolicy(model, [filter])](#MongooseAdapter+loadFilteredPolicy)
         * [.savePolicyLine(ptype, rule)](#MongooseAdapter+savePolicyLine) ⇒ <code>Object</code>
@@ -64,6 +65,12 @@ This method is used by casbin and should not be called by user.
 | line | <code>Object</code> | Record with one policy rule from MongoDB |
 | model | <code>Object</code> | Casbin model to which policy rule must be loaded |
 
+<a name="MongooseAdapter+wipePolicy"></a>
+
+### mongooseAdapter.wipePolicy() ⇒ <code>Promise.&lt;void&gt;</code>
+Implements the process of resetting policy in the database.
+
+**Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 <a name="MongooseAdapter+loadPolicy"></a>
 
 ### mongooseAdapter.loadPolicy(model) ⇒ <code>Promise.&lt;void&gt;</code>

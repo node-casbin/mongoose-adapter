@@ -144,6 +144,14 @@ class MongooseAdapter {
   }
 
   /**
+   * Implements the process of resetting policy in the database.
+   * @returns {Promise<void>}
+   */
+  async wipePolicy () {
+    await CasbinRule.deleteMany({});
+  }
+
+  /**
    * Implements the process of loading policy from database into enforcer.
    * This method is used by casbin and should not be called by user.
    *
