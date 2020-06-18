@@ -151,6 +151,21 @@ class MongooseAdapter {
   }
 
   /**
+   * SyncedAdapter: Sets current session to specific one. Do not use this unless you know what you are doing.
+   */
+  async setSession (session) {
+    if (this.isSynced) {
+      if (session && (session.hasEnded && session.hasEnded.constructor && session.hasEnded.call && session.hasEnded.apply) && !session.hasEnded()) {
+        this.session = session
+      } else {
+        throw Error('Tried to set an invalid session')
+      }
+    } else {
+      throw Error('Tried to set a session for non-replicaset connection')
+    }
+  }
+
+  /**
    * SyncedAdapter: Gets active transaction or starts a new one. Transaction must be closed before changes are done
    * to the database. See: commitTransaction, abortTransaction
    * @returns {Promise<Session>} Returns a session with active transaction
@@ -356,7 +371,28 @@ class MongooseAdapter {
   }
 
   /**
-   * Implements the process of removing policy rule.
+   * Implements the process of adding a list of policy rules.
+   * This method is used by casbin and should not be called by user.
+   *
+   * @param {String} sec Section of the policy
+   * @param {String} ptype Type of the policy (e.g. "p" or "g")
+   * @param {Array<String>} rule Policy rule to add into enforcer
+   * @returns {Promise<void>}
+   */
+  async addPolicies (sec, ptype, rules) {
+    const options = {}
+    if (this.isSynced) options.session = await this.getTransaction()
+    else throw Error('addPolicies is not supported in non-replicaset environments')
+    try {
+      const promises = rules.map(async rule => this.addPolicy(sec, ptype, rule))
+      await Promise.all(promises)
+    } catch (err) {
+      options.session && await options.session.abortTransaction()
+    }
+  }
+
+  /**
+   * Implements the process of removing a list of policy rules.
    * This method is used by casbin and should not be called by user.
    *
    * @param {String} sec Section of the policy
@@ -369,6 +405,28 @@ class MongooseAdapter {
     const options = {}
     if (this.isSynced) options.session = await this.getTransaction()
     await CasbinRule.deleteMany({ p_type, v0, v1, v2, v3, v4, v5 }, options)
+  }
+
+  /**
+   * Implements the process of removing a policyList rules.
+   * This method is used by casbin and should not be called by user.
+   *
+   * @param {String} sec Section of the policy
+   * @param {String} ptype Type of the policy (e.g. "p" or "g")
+   * @param {Array<String>} rules Policy rule to remove from enforcer
+   * @returns {Promise<void>}
+   */
+  async removePolicies (sec, ptype, rules) {
+    const options = {}
+    try {
+      if (this.isSynced) options.session = await this.getTransaction()
+      else throw Error('addPolicies is not supported in non-replicaset environments')
+
+      const promises = rules.map(async rule => this.removePolicy(sec, ptype, rule))
+      await Promise.all(promises)
+    } catch (error) {
+      options.session && await options.session.abortTransaction()
+    }
   }
 
   /**
