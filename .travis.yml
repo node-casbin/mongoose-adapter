@@ -10,6 +10,24 @@ node_js:
 
 install: npm install
 
+before_script:
+- echo "replication:" | sudo tee -a /etc/mongod.conf
+- |-
+  echo "  replSetName: \"rs0\"" | sudo tee -a /etc/mongod.conf
+- sudo service mongod restart
+- sleep 20
+- |
+  mongo --eval 'rs.initiate({_id:"rs0", members: [{"_id":1, "host":"localhost:27017"},{"_id":2, "host":"localhost:27018"},{"_id":3, "host":"localhost:27019"}]})'
+- |
+  mongo --eval 'rs.status().ok'
+- |
+  while [[ $? -eq 0 ]];
+  do
+    sleep 5
+    echo sleeping for 5s
+    mongo --eval 'rs.status().ok'
+  done
+
 script:
   - echo "Running tests against $(node -v)..."
   - npm run test:integration
