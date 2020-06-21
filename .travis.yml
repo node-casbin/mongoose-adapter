@@ -50,8 +50,8 @@ before_script:
 - mongo --port 27018 --eval 'db.stats()'
 - bash -c "while true; do mongo --quiet --port 27018 --eval 'if (!db.stats().ok) { quit(1) }' || { sleep 2; continue; } && break; done;"
 - |
-  mongo --eval 'rs.initiate({_id:"rs0", members: [{"_id":0, "host":"travis:27017"},{"_id":1, "host":"travis:27018"}]})'
-- bash -c "while true; do mongo --quiet --eval 'if (!rs.status().ok) { quit(1) }' || { sleep 2; continue; } && break; done;"
+  mongo --quiet --eval 'rs.initiate({_id:"rs0", members: [{"_id":0, "host":"travis:27017"},{"_id":1, "host":"travis:27018"}]})'
+- mongo --quiet --port 27017 .travis/rs_status.js || { sudo cat /tmp/mongodb_rs0.log; sudo cat /tmp/mongodb_rs1.log; exit 1; }
 - mongo --quiet --eval 'rs.status()' 
 
 script:
