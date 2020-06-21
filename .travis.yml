@@ -52,6 +52,7 @@ before_script:
 - |
   mongo --eval 'rs.initiate({_id:"rs0", members: [{"_id":0, "host":"travis:27017"},{"_id":1, "host":"travis:27018"}]})'
 - bash -c "while true; do mongo --quiet --eval 'if (!rs.status().ok) { quit(1) }' || { sleep 2; continue; } && break; done;"
+- mongo --quiet --eval 'rs.status()' 
 
 script:
   - echo "Running tests against $(node -v)..."
