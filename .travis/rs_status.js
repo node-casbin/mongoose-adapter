@@ -5,7 +5,7 @@
 var attempts = 50;
 while (--attempts > 0) {
 
-  var rs_status = rs.status();;
+  var rs_status = rs.status();
   printjson(rs_status);
 
   if (rs_status.ok) {
