@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const { Helper } = require('casbin');
+const { Helper, logPrint } = require('casbin');
 const mongoose = require('mongoose');
 const CasbinRule = require('./model');
+const { AdapterError, InvalidAdapterTypeError } = require('./errors');
 
 /**
  * Implements a policy adapter for casbin with MongoDB support.
@@ -36,16 +37,21 @@ class MongooseAdapter {
    */
   constructor (uri, options = {}) {
     if (!uri || typeof uri !== 'string') {
-      throw new Error('You must provide Mongo URI to connect to!');
+      throw new AdapterError('You must provide Mongo URI to connect to!');
     }
 
     // by default, adapter is not filtered
     this.isFiltered = false;
-    this.useTransaction = false;
+    this.isSynced = false;
+    this.autoAbort = false;
     this.uri = uri;
     this.options = options;
   }
 
+  /**
+   * Opens a connection to mongoDB
+   * @returns {Promise<void>}
+   */
   async _open () {
     await mongoose.connect(this.uri, this.options)
       .then(instance => {
@@ -61,15 +67,19 @@ class MongooseAdapter {
    * @static
    * @param {String} uri Mongo URI where casbin rules must be persisted
    * @param {Object} [options={}] Additional options to pass on to mongoose client
+   * @param {Object} [adapterOptions={}] Additional options to pass on to adapter
    * @example
    * const adapter = await MongooseAdapter.newAdapter('MONGO_URI');
    * const adapter = await MongooseAdapter.newAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
-  static async newAdapter (uri, options = {}, filtered = false, useTransaction = false) {
+  static async newAdapter (uri, options = {}, adapterOptions = {}) {
     const adapter = new MongooseAdapter(uri, options);
     await adapter._open();
+    const { filtered = false, synced = false, autoAbort = false, autoCommit = false } = adapterOptions;
     adapter.setFiltered(filtered);
-    adapter.setTransaction(useTransaction);
+    adapter.setSynced(synced);
+    adapter.setAutoAbort(autoAbort);
+    adapter.setAutoCommit(autoCommit);
     return adapter;
   }
 
@@ -86,9 +96,28 @@ class MongooseAdapter {
    * const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
   static async newFilteredAdapter (uri, options = {}) {
-    const adapter = await MongooseAdapter.newAdapter(uri, options, true);
+    const adapter = await MongooseAdapter.newAdapter(uri, options, { filtered: true });
     await adapter._open();
 
+    return adapter;
+  }
+
+  /**
+   * Creates a new instance of mongoose adapter for casbin.
+   * It does the same as newAdapter, but it checks wether database is a replica set. If it is, it enables
+   * transactions for the adapter.
+   * Transactions are never commited automatically. You have to use commitTransaction to add pending changes.
+   *
+   * @static
+   * @param {String} uri Mongo URI where casbin rules must be persisted
+   * @param {Object} [options={}] Additional options to pass on to mongoose client
+   * @param {Boolean} autoAbort Whether to abort transactions on Error automatically
+   * @example
+   * const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI');
+   * const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI', { mongoose_options: 'here' });
+   */
+  static async newSyncedAdapter (uri, options = {}, autoAbort = true, autoCommit = true) {
+    const adapter = await MongooseAdapter.newAdapter(uri, options, { synced: true, autoAbort, autoCommit });
     return adapter;
   }
 
@@ -102,8 +131,100 @@ class MongooseAdapter {
     this.isFiltered = isFiltered;
   }
 
-  setTransaction (transactioned = true) {
-    this.useTransaction = transactioned;
+  /**
+   * SyncedAdapter: Switch adapter to (non)synced state.
+   * This enables mongoDB transactions when loading and saving policies to DB.
+   *
+   * @param {Boolean} [synced=true] Flag that represents the current state of adapter (filtered or not)
+   */
+  setSynced (synced = true) {
+    this.isSynced = synced;
+  }
+
+  /**
+   * SyncedAdapter: Automatically abort on Error.
+   * When enabled, functions will automatically abort on error
+   *
+   * @param {Boolean} [abort=true] Flag that represents if automatic abort should be enabled or not
+   */
+  setAutoAbort (abort = true) {
+    if (this.isSynced) this.autoAbort = abort;
+  }
+
+  /**
+   * SyncedAdapter: Automatically commit after each addition.
+   * When enabled, functions will automatically commit after function has finished
+   *
+   * @param {Boolean} [commit=true] Flag that represents if automatic commit should be enabled or not
+   */
+  setAutoCommit (commit = true) {
+    if (this.isSynced) this.autoCommit = commit;
+  }
+
+  /**
+   * SyncedAdapter: Gets active session or starts a new one. Sessions are used to handle transactions.
+   * @returns {Promise<Session>}
+   */
+  async getSession () {
+    if (this.isSynced) {
+      return this.session && !this.session.hasEnded() ? this.session : this.mongoseInstance.startSession();
+    } else throw new InvalidAdapterTypeError('Transactions are only supported by SyncedAdapter. See newSyncedAdapter');
+  }
+
+  /**
+   * SyncedAdapter: Sets current session to specific one. Do not use this unless you know what you are doing.
+   */
+  async setSession (session) {
+    if (this.isSynced) {
+      if (session && (session.hasEnded && session.hasEnded.constructor && session.hasEnded.call && session.hasEnded.apply) && !session.hasEnded()) {
+        this.session = session;
+      } else {
+        throw new AdapterError('Tried to set an invalid session');
+      }
+    } else {
+      throw new InvalidAdapterTypeError('Sessions are only supported by SyncedAdapter. See newSyncedAdapter');
+    }
+  }
+
+  /**
+   * SyncedAdapter: Gets active transaction or starts a new one. Transaction must be closed before changes are done
+   * to the database. See: commitTransaction, abortTransaction
+   * @returns {Promise<Session>} Returns a session with active transaction
+   */
+  async getTransaction () {
+    if (this.isSynced) {
+      const session = await this.getSession();
+      if (!session.transaction.isActive) {
+        await session.startTransaction();
+        logPrint('Transaction started. To commit changes use adapter.commitTransaction() or to abort use adapter.abortTransaction()');
+      }
+      return session;
+    } else throw new InvalidAdapterTypeError('Transactions are only supported by SyncedAdapter. See newSyncedAdapter');
+  }
+
+  /**
+   * SyncedAdapter: Commits active transaction. Documents are not saved before this function is used.
+   * Transaction closes after the use of this function.
+   * @returns {Promise<void>}
+   */
+  async commitTransaction () {
+    if (this.isSynced) {
+      const session = await this.getSession();
+      await session.commitTransaction();
+    } else throw new InvalidAdapterTypeError('Transactions are only supported by SyncedAdapter. See newSyncedAdapter');
+  }
+
+  /**
+   * SyncedAdapter: Aborts active transaction. All Document changes within this transaction are reverted.
+   * Transaction closes after the use of this function.
+   * @returns {Promise<void>}
+   */
+  async abortTransaction () {
+    if (this.isSynced) {
+      const session = await this.getSession();
+      await session.abortTransaction();
+      logPrint('Transaction aborted');
+    } else throw new InvalidAdapterTypeError('Transactions are only supported by SyncedAdapter. See newSyncedAdapter');
   }
 
   /**
@@ -167,16 +288,21 @@ class MongooseAdapter {
     } else {
       this.setFiltered(false);
     }
+    const options = {};
+    if (this.isSynced) options.session = await this.getTransaction();
 
-    const lines = await CasbinRule.find(filter || {});
+    const lines = await CasbinRule.find(filter || {}, null, options);
+
+    this.autoCommit && options.session && await options.session.commitTransaction();
     for (const line of lines) {
       this.loadPolicyLine(line, model);
     }
   }
 
   /**
-   * Persists one policy rule into MongoDB.
-   * This method is used by casbin and should not be called by user.
+   * Generates one policy rule ready to be saved into MongoDB.
+   * This method is used by casbin to generate Mongoose Model Object for single policy
+   * and should not be called by user.
    *
    * @param {String} ptype Policy type to save into MongoDB
    * @param {Array<String>} rule An array which consists of policy rule elements to store
@@ -223,20 +349,8 @@ class MongooseAdapter {
    * @returns {Promise<Boolean>}
    */
   async savePolicy (model) {
-    const conn = this.mongoseInstance.connections[0];
-    if (conn && !conn.replica) {
-      console.warn('casbin-mongoose-adapter: MongoDB currently only supports transactions on replica sets, not standalone servers.');
-      if (this.useTransaction) {
-        console.warn('If you do not care set useTransaction option to false in casbin-mongoose-adapter');
-        return false;
-      }
-    }
-
-    let session;
-    if (this.useTransaction) {
-      session = await CasbinRule.startSession();
-      session.startTransaction();
-    }
+    const options = {};
+    if (this.isSynced) options.session = await this.getTransaction();
 
     try {
       const lines = [];
@@ -255,13 +369,13 @@ class MongooseAdapter {
         }
       }
 
-      await CasbinRule.collection.insertMany(lines, session ? { session: session } : null);
-      session && await session.commitTransaction();
+      await CasbinRule.collection.insertMany(lines, options);
+
+      this.autoCommit && options.session && await options.session.commitTransaction();
     } catch (err) {
-      session && await session.abortTransaction();
-      throw err;
-    } finally {
-      session && await session.endSession();
+      this.autoAbort && options.session && await options.session.abortTransaction();
+      console.error(err);
+      return false;
     }
 
     return true;
@@ -277,12 +391,46 @@ class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async addPolicy (sec, ptype, rule) {
-    const line = this.savePolicyLine(ptype, rule);
-    await line.save();
+    const options = {};
+    try {
+      if (this.isSynced) options.session = await this.getTransaction();
+
+      const line = this.savePolicyLine(ptype, rule);
+      await line.save(options);
+
+      this.autoCommit && options.session && await options.session.commitTransaction();
+    } catch (err) {
+      this.autoAbort && options.session && await options.session.abortTransaction();
+      throw err;
+    }
   }
 
   /**
-   * Implements the process of removing policy rule.
+   * Implements the process of adding a list of policy rules.
+   * This method is used by casbin and should not be called by user.
+   *
+   * @param {String} sec Section of the policy
+   * @param {String} ptype Type of the policy (e.g. "p" or "g")
+   * @param {Array<String>} rule Policy rule to add into enforcer
+   * @returns {Promise<void>}
+   */
+  async addPolicies (sec, ptype, rules) {
+    const options = {};
+    if (this.isSynced) options.session = await this.getTransaction();
+    else throw new InvalidAdapterTypeError('addPolicies is only supported by SyncedAdapter. See newSyncedAdapter');
+    try {
+      const promises = rules.map(async rule => this.addPolicy(sec, ptype, rule));
+      await Promise.all(promises);
+
+      this.autoCommit && options.session && await options.session.commitTransaction();
+    } catch (err) {
+      this.autoAbort && options.session && await options.session.abortTransaction();
+      throw err;
+    }
+  }
+
+  /**
+   * Implements the process of removing a list of policy rules.
    * This method is used by casbin and should not be called by user.
    *
    * @param {String} sec Section of the policy
@@ -291,8 +439,44 @@ class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async removePolicy (sec, ptype, rule) {
-    const { p_type, v0, v1, v2, v3, v4, v5 } = this.savePolicyLine(ptype, rule);
-    await CasbinRule.deleteMany({ p_type, v0, v1, v2, v3, v4, v5 });
+    const options = {};
+    try {
+      if (this.isSynced) options.session = await this.getTransaction();
+
+      const { p_type, v0, v1, v2, v3, v4, v5 } = this.savePolicyLine(ptype, rule);
+
+      await CasbinRule.deleteMany({ p_type, v0, v1, v2, v3, v4, v5 }, options);
+
+      this.autoCommit && options.session && await options.session.commitTransaction();
+    } catch (err) {
+      this.autoAbort && options.session && await options.session.abortTransaction();
+      throw err;
+    }
+  }
+
+  /**
+   * Implements the process of removing a policyList rules.
+   * This method is used by casbin and should not be called by user.
+   *
+   * @param {String} sec Section of the policy
+   * @param {String} ptype Type of the policy (e.g. "p" or "g")
+   * @param {Array<String>} rules Policy rule to remove from enforcer
+   * @returns {Promise<void>}
+   */
+  async removePolicies (sec, ptype, rules) {
+    const options = {};
+    try {
+      if (this.isSynced) options.session = await this.getTransaction();
+      else throw new InvalidAdapterTypeError('removePolicies is only supported by SyncedAdapter. See newSyncedAdapter');
+
+      const promises = rules.map(async rule => this.removePolicy(sec, ptype, rule));
+      await Promise.all(promises);
+
+      this.autoCommit && options.session && await options.session.commitTransaction();
+    } catch (err) {
+      this.autoAbort && options.session && await options.session.abortTransaction();
+      throw err;
+    }
   }
 
   /**
@@ -306,37 +490,46 @@ class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async removeFilteredPolicy (sec, ptype, fieldIndex, ...fieldValues) {
-    const where = ptype ? { p_type: ptype } : {};
+    const options = {};
+    try {
+      if (this.isSynced) options.session = await this.getTransaction();
+      const where = ptype ? { p_type: ptype } : {};
 
-    if (fieldIndex <= 0 && fieldIndex + fieldValues.length > 0 && fieldValues[0 - fieldIndex]) {
-      where.v0 = fieldValues[0 - fieldIndex];
+      if (fieldIndex <= 0 && fieldIndex + fieldValues.length > 0 && fieldValues[0 - fieldIndex]) {
+        where.v0 = fieldValues[0 - fieldIndex];
+      }
+
+      if (fieldIndex <= 1 && fieldIndex + fieldValues.length > 1 && fieldValues[1 - fieldIndex]) {
+        where.v1 = fieldValues[1 - fieldIndex];
+      }
+
+      if (fieldIndex <= 2 && fieldIndex + fieldValues.length > 2 && fieldValues[2 - fieldIndex]) {
+        where.v2 = fieldValues[2 - fieldIndex];
+      }
+
+      if (fieldIndex <= 3 && fieldIndex + fieldValues.length > 3 && fieldValues[3 - fieldIndex]) {
+        where.v3 = fieldValues[3 - fieldIndex];
+      }
+
+      if (fieldIndex <= 4 && fieldIndex + fieldValues.length > 4 && fieldValues[4 - fieldIndex]) {
+        where.v4 = fieldValues[4 - fieldIndex];
+      }
+
+      if (fieldIndex <= 5 && fieldIndex + fieldValues.length > 5 && fieldValues[5 - fieldIndex]) {
+        where.v5 = fieldValues[5 - fieldIndex];
+      }
+      await CasbinRule.deleteMany(where, options);
+
+      this.autoCommit && options.session && await options.session.commitTransaction();
+    } catch (err) {
+      this.autoAbort && options.session && await options.session.abortTransaction();
+      throw err;
     }
-
-    if (fieldIndex <= 1 && fieldIndex + fieldValues.length > 1 && fieldValues[1 - fieldIndex]) {
-      where.v1 = fieldValues[1 - fieldIndex];
-    }
-
-    if (fieldIndex <= 2 && fieldIndex + fieldValues.length > 2 && fieldValues[2 - fieldIndex]) {
-      where.v2 = fieldValues[2 - fieldIndex];
-    }
-
-    if (fieldIndex <= 3 && fieldIndex + fieldValues.length > 3 && fieldValues[3 - fieldIndex]) {
-      where.v3 = fieldValues[3 - fieldIndex];
-    }
-
-    if (fieldIndex <= 4 && fieldIndex + fieldValues.length > 4 && fieldValues[4 - fieldIndex]) {
-      where.v4 = fieldValues[4 - fieldIndex];
-    }
-
-    if (fieldIndex <= 5 && fieldIndex + fieldValues.length > 5 && fieldValues[5 - fieldIndex]) {
-      where.v5 = fieldValues[5 - fieldIndex];
-    }
-
-    await CasbinRule.deleteMany(where);
   }
 
   async close () {
     if (this.mongoseInstance && this.mongoseInstance.connection) {
+      if (this.session) await this.session.endSession();
       await this.mongoseInstance.connection.close();
     }
   }

@@ -1,7 +1,5 @@
 language: node_js
 
-sudo: false
-
 node_js:
   - '10'
   - '11'
@@ -9,6 +7,52 @@ node_js:
   - 'stable'
 
 install: npm install
+
+before_script:
+# Stop current mongo
+- sudo systemctl stop mongod 
+
+# Begin modification of the default mongoDB instance
+- sudo cp .travis/mongo.conf /etc/mongodb.conf
+
+# Wipe out the data directory so we are clean with our configuration
+- sudo rm -rf /var/lib/mongodb/*
+- sudo rm -rf /var/log/mongodb/mongodb.log
+
+# Create new directory for first replica set
+- sudo mkdir /var/lib/mongodb/rs0
+- sudo chown mongodb /var/lib/mongodb/rs0
+
+# Start up the service using the normal init script
+- sudo cat /etc/mongodb.conf
+- sudo -u mongodb mongod --config /etc/mongodb.conf --logpath /tmp/mongodb_rs0.log || { sudo cat /tmp/mongodb_rs0.log; exit 1; }
+
+# Just wait until we are sure it is up
+- bash -c "while true; do mongo --quiet --port 27017 --eval 'if (!db.stats().ok) { quit(1) }' || { sleep 2; continue; } && break; done;"
+
+#- echo "logpath = /tmp/mongodb_rs0.log" | sudo tee -a /etc/mongodb.conf
+- sudo cp /etc/mongodb.conf /etc/mongodb_rs1.conf
+#- echo "port = 27018" | sudo tee -a /etc/mongodb_rs1.conf
+- |
+  sudo sed -i 's,port: 27017,port: 27018,' /etc/mongodb_rs1.conf
+- sudo sed -i 's,/var/lib/mongodb/rs0,/var/lib/mongodb/rs1,' /etc/mongodb_rs1.conf
+- sudo sed -i 's,/tmp/mongodb_rs0.log,/tmp/mongodb_rs1.log,' /etc/mongodb_rs1.conf
+
+# Create the data directory for the secondary
+- sudo mkdir /var/lib/mongodb/rs1
+- sudo chown mongodb /var/lib/mongodb/rs1
+
+# Start the secondary instance using the plain mongod command
+- sudo cat /etc/mongodb_rs1.conf
+- sudo -u mongodb mongod --config /etc/mongodb_rs1.conf --logpath /tmp/mongodb_rs1.log|| { sudo cat /tmp/mongodb_rs1.log; exit 1; }
+
+# Wait for the secondary to start up
+- mongo --port 27018 --eval 'db.stats()'
+- bash -c "while true; do mongo --quiet --port 27018 --eval 'if (!db.stats().ok) { quit(1) }' || { sleep 2; continue; } && break; done;"
+- |
+  mongo --quiet --eval 'rs.initiate({_id:"rs0", members: [{"_id":0, "host":"travis:27017"},{"_id":1, "host":"travis:27018"}]})'
+- mongo --quiet --port 27017 .travis/rs_status.js || { sudo cat /tmp/mongodb_rs0.log; sudo cat /tmp/mongodb_rs1.log; exit 1; }
+- mongo --quiet --eval 'rs.status()' 
 
 script:
   - echo "Running tests against $(node -v)..."

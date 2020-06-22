@@ -48,10 +48,22 @@ describe('MongooseAdapter', () => {
 
     assert.isFunction(MongooseAdapter.newAdapter);
     assert.isFunction(MongooseAdapter.newFilteredAdapter);
+    assert.isFunction(MongooseAdapter.newSyncedAdapter);
+    assert.isFunction(adapter._open);
+    assert.isFunction(adapter.close);
+    assert.isFunction(adapter.getSession);
+    assert.isFunction(adapter.getTransaction);
+    assert.isFunction(adapter.commitTransaction);
+    assert.isFunction(adapter.abortTransaction);
+    assert.isFunction(adapter.abortTransaction);
     assert.isFunction(adapter.loadPolicyLine);
     assert.isFunction(adapter.loadPolicy);
     assert.isFunction(adapter.loadFilteredPolicy);
+    assert.isFunction(adapter.setFiltered);
+    assert.isFunction(adapter.setSynced);
     assert.isBoolean(adapter.isFiltered);
+    assert.isBoolean(adapter.isFiltered);
+    assert.isBoolean(adapter.isSynced);
     assert.isFunction(adapter.savePolicyLine);
     assert.isFunction(adapter.savePolicy);
     assert.isFunction(adapter.addPolicy);

@@ -65,7 +65,8 @@
     "husky": "4.2.3",
     "jsdoc-to-markdown": "5.0.3",
     "mocha": "7.0.1",
-    "nyc": "15.0.0"
+    "nyc": "15.0.0",
+    "sinon": "^9.0.0"
   },
   "dependencies": {
     "casbin": "4.1.1",
@@ -84,5 +85,8 @@
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
+  },
+  "nyc": {
+    "reporter": ["lcov"]
   }
 }
