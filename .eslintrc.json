@@ -1,6 +1,10 @@
 {
   "extends": "standard",
   "rules": {
+    "semi": [
+      "error",
+      "always"
+    ],
     "camelcase": [
       "error",
       {

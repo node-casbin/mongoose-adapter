@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const { Schema } = require('mongoose')
-const mongoose = require('mongoose')
+const { Schema } = require('mongoose');
+const mongoose = require('mongoose');
 
 const schema = new Schema({
   p_type: {
@@ -45,6 +45,6 @@ const schema = new Schema({
     type: Schema.Types.String,
     index: true
   }
-}, { collection: 'casbin_rule', minimize: false, timestamps: false })
+}, { collection: 'casbin_rule', minimize: false, timestamps: false });
 
-module.exports = mongoose.model('CasbinRule', schema, 'casbin_rule')
+module.exports = mongoose.model('CasbinRule', schema, 'casbin_rule');
