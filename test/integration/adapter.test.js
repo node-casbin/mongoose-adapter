@@ -18,6 +18,7 @@ const {
   createEnforcer,
   createAdapter,
   createDisconnectedAdapter,
+  createSyncedAdapter,
   createFailingSyncedAdapter,
   basicModel,
   basicPolicy,
@@ -28,6 +29,7 @@ const {
 } = require('../helpers/helpers')
 const { newEnforcer, Model } = require('casbin')
 const CasbinRule = require('../../src/model')
+const { InvalidConnectionError } = require('../../src/errors')
 
 // These tests are just smoke tests for get/set policy rules
 // We do not need to cover other aspects of casbin, since casbin itself is covered with tests
@@ -55,6 +57,160 @@ describe('MongooseAdapter', () => {
 
     const rulesAfter = await CasbinRule.find({ p_type: 'p', v0: 'sub', v1: 'obj', v2: 'act' })
     assert.equal(rulesAfter.length, 1)
+  })
+
+  it('Should properly add and remove policies', async () => {
+    const a = await createSyncedAdapter()
+
+    // Because the DB is empty at first,
+    // so we need to load the policy from the file adapter (.CSV) first.
+    let e = await newEnforcer(rbacModel, rbacPolicy)
+
+    const rulesBefore = await CasbinRule.find({})
+    assert.equal(rulesBefore.length, 0)
+
+    // This is a trick to save the current policy to the DB.
+    // We can't call e.savePolicy() because the adapter in the enforcer is still the file adapter.
+    // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
+    await a.savePolicy(await e.getModel())
+    const rulesAfter = await CasbinRule.find({})
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2]), [
+      ['p', 'alice', 'data1', 'read'],
+      ['p', 'bob', 'data2', 'write'],
+      ['p', 'data2_admin', 'data2', 'read'],
+      ['p', 'data2_admin', 'data2', 'write'],
+      ['g', 'alice', 'data2_admin', undefined]])
+
+    // Add a single policy to Database
+    await a.addPolicy('', 'p', ['role', 'res', 'action'])
+    e = await newEnforcer(rbacModel, a)
+    assert.deepEqual(await e.getPolicy(), [
+      ['alice', 'data1', 'read'],
+      ['bob', 'data2', 'write'],
+      ['data2_admin', 'data2', 'read'],
+      ['data2_admin', 'data2', 'write'],
+      ['role', 'res', 'action']])
+
+    // Add a policyList to Database
+    await a.addPolicies('', 'p', [['role', 'res', 'GET'], ['role', 'res', 'POST']])
+    e = await newEnforcer(rbacModel, a)
+
+    // Clear the current policy.
+    await e.clearPolicy()
+    assert.deepEqual(await e.getPolicy(), [])
+
+    // Load the policy from Database.
+    await a.loadPolicy(e.getModel())
+    assert.deepEqual(await e.getPolicy(), [
+      ['alice', 'data1', 'read'],
+      ['bob', 'data2', 'write'],
+      ['data2_admin', 'data2', 'read'],
+      ['data2_admin', 'data2', 'write'],
+      ['role', 'res', 'action'],
+      ['role', 'res', 'GET'],
+      ['role', 'res', 'POST']])
+
+    // Remove a single policy from Database
+    await a.removePolicy('', 'p', ['role', 'res', 'action'])
+    e = await newEnforcer(rbacModel, a)
+    assert.deepEqual(await e.getPolicy(), [
+      ['alice', 'data1', 'read'],
+      ['bob', 'data2', 'write'],
+      ['data2_admin', 'data2', 'read'],
+      ['data2_admin', 'data2', 'write'],
+      ['role', 'res', 'GET'],
+      ['role', 'res', 'POST']])
+
+    // Remove a policylist from Database
+    await a.removePolicies('', 'p', [['role', 'res', 'GET'], ['role', 'res', 'POST']])
+    e = await newEnforcer(rbacModel, a)
+
+    assert.deepEqual(await e.getPolicy(), [
+      ['alice', 'data1', 'read'],
+      ['bob', 'data2', 'write'],
+      ['data2_admin', 'data2', 'read'],
+      ['data2_admin', 'data2', 'write']])
+  })
+
+  it('Add Policies and Remove Policies should not work on normal adapter', async () => {
+    const a = await createAdapter()
+
+    // Because the DB is empty at first,
+    // so we need to load the policy from the file adapter (.CSV) first.
+    let e = await newEnforcer(rbacModel, rbacPolicy)
+
+    const rulesBefore = await CasbinRule.find({})
+    assert.equal(rulesBefore.length, 0)
+
+    // This is a trick to save the current policy to the DB.
+    // We can't call e.savePolicy() because the adapter in the enforcer is still the file adapter.
+    // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
+    await a.savePolicy(await e.getModel())
+    const rulesAfter = await CasbinRule.find({})
+    assert.deepEqual(rulesAfter.map(rule => [rule.p_type, rule.v0, rule.v1, rule.v2]), [
+      ['p', 'alice', 'data1', 'read'],
+      ['p', 'bob', 'data2', 'write'],
+      ['p', 'data2_admin', 'data2', 'read'],
+      ['p', 'data2_admin', 'data2', 'write'],
+      ['g', 'alice', 'data2_admin', undefined]])
+
+    // Add a single policy to Database
+    await a.addPolicy('', 'p', ['role', 'res', 'action'])
+    e = await newEnforcer(rbacModel, a)
+    assert.deepEqual(await e.getPolicy(), [
+      ['alice', 'data1', 'read'],
+      ['bob', 'data2', 'write'],
+      ['data2_admin', 'data2', 'read'],
+      ['data2_admin', 'data2', 'write'],
+      ['role', 'res', 'action']])
+
+    // Add policyList to Database
+    try {
+      await a.addPolicies('', 'p', [['role', 'res', 'GET'], ['role', 'res', 'POST']])
+    } catch (error) {
+      assert(error instanceof InvalidConnectionError)
+      assert(error.message === 'addPolicies is not supported in non-replicaset environments')
+    }
+
+    e = await newEnforcer(rbacModel, a)
+
+    // Clear the current policy.
+    await e.clearPolicy()
+    assert.deepEqual(await e.getPolicy(), [])
+
+    // Load the policy from Database.
+    await a.loadPolicy(e.getModel())
+    assert.deepEqual(await e.getPolicy(), [
+      ['alice', 'data1', 'read'],
+      ['bob', 'data2', 'write'],
+      ['data2_admin', 'data2', 'read'],
+      ['data2_admin', 'data2', 'write'],
+      ['role', 'res', 'action']])
+
+    // Remove a single policy from Database
+    await a.removePolicy('', 'p', ['role', 'res', 'action'])
+    e = await newEnforcer(rbacModel, a)
+    assert.deepEqual(await e.getPolicy(), [
+      ['alice', 'data1', 'read'],
+      ['bob', 'data2', 'write'],
+      ['data2_admin', 'data2', 'read'],
+      ['data2_admin', 'data2', 'write']])
+
+    // Remove a policylist from Database
+
+    try {
+      await a.removePolicies('', 'p', [['data2_admin', 'data2', 'read'], ['data2_admin', 'data2', 'write']])
+    } catch (error) {
+      assert(error instanceof InvalidConnectionError)
+      assert(error.message === 'removePolicies is not supported in non-replicaset environments')
+    }
+    e = await newEnforcer(rbacModel, a)
+
+    assert.deepEqual(await e.getPolicy(), [
+      ['alice', 'data1', 'read'],
+      ['bob', 'data2', 'write'],
+      ['data2_admin', 'data2', 'read'],
+      ['data2_admin', 'data2', 'write']])
   })
 
   it('Should properly store new policy rules from a file', async () => {
@@ -581,7 +737,8 @@ describe('MongooseAdapter', () => {
     try {
       await createFailingSyncedAdapter()
     } catch (error) {
-      assert(error.message, 'You must provide Mongo URI with replicaSet attribute to connect with synced adapter!')
+      assert(error instanceof InvalidConnectionError)
+      assert(error.message === 'Tried to enable transactions for non - replicaset connection')
     }
   })
 
@@ -591,7 +748,8 @@ describe('MongooseAdapter', () => {
       const adapter = await createAdapter()
       adapter.setSynced(true)
     } catch (error) {
-      assert(error.message, 'Tried to enable transactions for non-replicaset connection')
+      assert(error instanceof InvalidConnectionError)
+      assert(error.message === 'Tried to enable transactions for non-replicaset connection')
     }
   })
 
@@ -601,7 +759,8 @@ describe('MongooseAdapter', () => {
       const adapter = await createAdapter()
       adapter.getSession()
     } catch (error) {
-      assert(error.message, 'Tried to start a session for non-replicaset connection')
+      assert(error instanceof InvalidConnectionError)
+      assert(error.message === 'Tried to start a session for non-replicaset connection')
     }
   })
 
@@ -611,7 +770,8 @@ describe('MongooseAdapter', () => {
       const adapter = await createAdapter()
       adapter.getTransaction()
     } catch (error) {
-      assert(error.message, 'Tried to start a session for non-replicaset connection')
+      assert(error instanceof InvalidConnectionError)
+      assert(error.message === 'Tried to start a session for non-replicaset connection')
     }
   })
 
@@ -621,7 +781,8 @@ describe('MongooseAdapter', () => {
       const adapter = await createAdapter()
       adapter.commitTransaction()
     } catch (error) {
-      assert(error.message, 'Tried to start a session for non-replicaset connection')
+      assert(error instanceof InvalidConnectionError)
+      assert(error.message === 'Tried to start a session for non-replicaset connection')
     }
   })
 
@@ -631,7 +792,8 @@ describe('MongooseAdapter', () => {
       const adapter = await createAdapter()
       adapter.abortTransaction()
     } catch (error) {
-      assert(error.message, 'Tried to start a session for non-replicaset connection')
+      assert(error instanceof InvalidConnectionError)
+      assert(error.message === 'Tried to start a session for non-replicaset connection')
     }
   })
 

@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const { Helper } = require('casbin')
+const { Helper, logPrint } = require('casbin')
 const mongoose = require('mongoose')
 const CasbinRule = require('./model')
+const { AdapterError, InvalidConnectionError } = require('./errors')
 
 /**
  * Implements a policy adapter for casbin with MongoDB support.
@@ -36,12 +37,13 @@ class MongooseAdapter {
    */
   constructor (uri, options = {}) {
     if (!uri || typeof uri !== 'string') {
-      throw new Error('You must provide Mongo URI to connect to!')
+      throw new AdapterError('You must provide Mongo URI to connect to!')
     }
 
     // by default, adapter is not filtered
     this.isFiltered = false
     this.isSynced = false
+    this.autoAbort = this.isSynced
     this.uri = uri
     this.options = options
   }
@@ -65,15 +67,19 @@ class MongooseAdapter {
    * @static
    * @param {String} uri Mongo URI where casbin rules must be persisted
    * @param {Object} [options={}] Additional options to pass on to mongoose client
+   * @param {Object} [adapterOptions={}] Additional options to pass on to adapter
    * @example
    * const adapter = await MongooseAdapter.newAdapter('MONGO_URI');
    * const adapter = await MongooseAdapter.newAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
-  static async newAdapter (uri, options = {}, filtered = false, synced = false) {
+  static async newAdapter (uri, options = {}, adapterOptions = {}) {
     const adapter = new MongooseAdapter(uri, options)
     await adapter._open()
+    const { filtered, synced, autoAbort, autoCommit } = adapterOptions
     adapter.setFiltered(filtered)
     adapter.setSynced(synced)
+    adapter.setAutoAbort(autoAbort)
+    adapter.setAutoCommit(autoCommit)
     return adapter
   }
 
@@ -90,7 +96,7 @@ class MongooseAdapter {
    * const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
   static async newFilteredAdapter (uri, options = {}) {
-    const adapter = await MongooseAdapter.newAdapter(uri, options, true)
+    const adapter = await MongooseAdapter.newAdapter(uri, options, { filtered: true })
     await adapter._open()
 
     return adapter
@@ -105,15 +111,13 @@ class MongooseAdapter {
    * @static
    * @param {String} uri Mongo URI where casbin rules must be persisted
    * @param {Object} [options={}] Additional options to pass on to mongoose client
+   * @param {Boolean} autoAbort Whether to abort transactions on Error automatically
    * @example
    * const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI');
    * const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
-  static async newSyncedAdapter (uri, options = {}) {
-    if (typeof uri !== 'string' || !uri.includes('replicaSet')) {
-      throw new Error('You must provide Mongo URI with replicaSet attribute to connect with synced adapter!')
-    }
-    const adapter = await MongooseAdapter.newAdapter(uri, options, false, true)
+  static async newSyncedAdapter (uri, options = {}, autoAbort = true, autoCommit = true) {
+    const adapter = await MongooseAdapter.newAdapter(uri, options, { synced: true, autoAbort, autoCommit })
     return adapter
   }
 
@@ -135,9 +139,28 @@ class MongooseAdapter {
    */
   setSynced (synced = true) {
     const conn = this.mongoseInstance.connections[0]
-    if (!synced) this.isSynced = synced
-    else if (conn && conn.replica) this.isSynced = synced
-    else throw Error('Tried to enable transactions for non-replicaset connection')
+    if (conn && conn.replica) this.isSynced = synced
+    else throw InvalidConnectionError('Tried to enable transactions for non-replicaset connection')
+  }
+
+  /**
+   * SyncedAdapter: Automatically abort on Error.
+   * When enabled, functions will automatically abort on error
+   *
+   * @param {Boolean} [abort=true] Flag that represents if automatic abort should be enabled or not
+   */
+  setAutoAbort (abort = true) {
+    if (this.isSynced) this.autoAbort = abort
+  }
+
+  /**
+   * SyncedAdapter: Automatically commit after each addition.
+   * When enabled, functions will automatically commit after function has finished
+   *
+   * @param {Boolean} [commit=true] Flag that represents if automatic commit should be enabled or not
+   */
+  setAutoCommit (commit = true) {
+    if (this.isSynced) this.autoCommit = commit
   }
 
   /**
@@ -147,7 +170,7 @@ class MongooseAdapter {
   async getSession () {
     if (this.isSynced) {
       return this.session && !this.session.hasEnded() ? this.session : CasbinRule.startSession()
-    } else throw Error('Tried to start a session for non-replicaset connection')
+    } else throw InvalidConnectionError('Tried to start a session for non-replicaset connection')
   }
 
   /**
@@ -158,10 +181,10 @@ class MongooseAdapter {
       if (session && (session.hasEnded && session.hasEnded.constructor && session.hasEnded.call && session.hasEnded.apply) && !session.hasEnded()) {
         this.session = session
       } else {
-        throw Error('Tried to set an invalid session')
+        throw AdapterError('Tried to set an invalid session')
       }
     } else {
-      throw Error('Tried to set a session for non-replicaset connection')
+      throw InvalidConnectionError('Tried to set a session for non-replicaset connection')
     }
   }
 
@@ -175,10 +198,10 @@ class MongooseAdapter {
       const session = await this.getSession()
       if (!session._serverSession.isTxnActive()) {
         await session.startTransaction()
-        console.warn('Transaction started. To commit changes use adapter.commitTransaction() or to abort use adapter.abortTransaction()')
+        logPrint('Transaction started. To commit changes use adapter.commitTransaction() or to abort use adapter.abortTransaction()')
       }
       return session
-    } else throw Error('Tried to start a session for non-replicaset connection')
+    } else throw InvalidConnectionError('Tried to start a session for non-replicaset connection')
   }
 
   /**
@@ -190,7 +213,7 @@ class MongooseAdapter {
     if (this.isSynced) {
       const session = await this.getSession()
       await session.commitTransaction()
-    } else throw Error('Tried to start a session for non-replicaset connection')
+    } else throw InvalidConnectionError('Tried to start a session for non-replicaset connection')
   }
 
   /**
@@ -202,8 +225,8 @@ class MongooseAdapter {
     if (this.isSynced) {
       const session = await this.getSession()
       await session.abortTransaction()
-      console.warn('Transaction aborted')
-    } else throw Error('Tried to start a session for non-replicaset connection')
+      logPrint('Transaction aborted')
+    } else throw InvalidConnectionError('Tried to start a session for non-replicaset connection')
   }
 
   /**
@@ -269,7 +292,10 @@ class MongooseAdapter {
     }
     const options = {}
     if (this.isSynced) options.session = await this.getTransaction()
+
     const lines = await CasbinRule.find(filter || {}, null, options)
+
+    this.autoCommit && options.session && await options.session.commitTransaction()
     for (const line of lines) {
       this.loadPolicyLine(line, model)
     }
@@ -346,9 +372,11 @@ class MongooseAdapter {
       }
 
       await CasbinRule.collection.insertMany(lines, options)
+
+      this.autoCommit && options.session && await options.session.commitTransaction()
     } catch (err) {
-      options.session && await options.session.abortTransaction()
-      console.error(err)
+      this.autoAbort && options.session && await options.session.abortTransaction()
+      logPrint(err)
       return false
     }
 
@@ -365,10 +393,18 @@ class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async addPolicy (sec, ptype, rule) {
-    const line = this.savePolicyLine(ptype, rule)
     const options = {}
-    if (this.isSynced) options.session = await this.getTransaction()
-    await line.save(options)
+    try {
+      if (this.isSynced) options.session = await this.getTransaction()
+
+      const line = this.savePolicyLine(ptype, rule)
+      await line.save(options)
+
+      this.autoCommit && options.session && await options.session.commitTransaction()
+    } catch (err) {
+      this.autoAbort && options.session && await options.session.abortTransaction()
+      throw err
+    }
   }
 
   /**
@@ -383,12 +419,15 @@ class MongooseAdapter {
   async addPolicies (sec, ptype, rules) {
     const options = {}
     if (this.isSynced) options.session = await this.getTransaction()
-    else throw Error('addPolicies is not supported in non-replicaset environments')
+    else throw InvalidConnectionError('addPolicies is not supported in non-replicaset environments')
     try {
       const promises = rules.map(async rule => this.addPolicy(sec, ptype, rule))
       await Promise.all(promises)
+
+      this.autoCommit && options.session && await options.session.commitTransaction()
     } catch (err) {
-      options.session && await options.session.abortTransaction()
+      this.autoAbort && options.session && await options.session.abortTransaction()
+      throw err
     }
   }
 
@@ -402,10 +441,19 @@ class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async removePolicy (sec, ptype, rule) {
-    const { p_type, v0, v1, v2, v3, v4, v5 } = this.savePolicyLine(ptype, rule)
     const options = {}
-    if (this.isSynced) options.session = await this.getTransaction()
-    await CasbinRule.deleteMany({ p_type, v0, v1, v2, v3, v4, v5 }, options)
+    try {
+      if (this.isSynced) options.session = await this.getTransaction()
+
+      const { p_type, v0, v1, v2, v3, v4, v5 } = this.savePolicyLine(ptype, rule)
+
+      await CasbinRule.deleteMany({ p_type, v0, v1, v2, v3, v4, v5 }, options)
+
+      this.autoCommit && options.session && await options.session.commitTransaction()
+    } catch (err) {
+      this.autoAbort && options.session && await options.session.abortTransaction()
+      throw err
+    }
   }
 
   /**
@@ -421,12 +469,15 @@ class MongooseAdapter {
     const options = {}
     try {
       if (this.isSynced) options.session = await this.getTransaction()
-      else throw Error('addPolicies is not supported in non-replicaset environments')
+      else throw InvalidConnectionError('removePolicies is not supported in non-replicaset environments')
 
       const promises = rules.map(async rule => this.removePolicy(sec, ptype, rule))
       await Promise.all(promises)
-    } catch (error) {
-      options.session && await options.session.abortTransaction()
+
+      this.autoCommit && options.session && await options.session.commitTransaction()
+    } catch (err) {
+      this.autoAbort && options.session && await options.session.abortTransaction()
+      throw err
     }
   }
 
@@ -441,34 +492,41 @@ class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async removeFilteredPolicy (sec, ptype, fieldIndex, ...fieldValues) {
-    const where = ptype ? { p_type: ptype } : {}
-
-    if (fieldIndex <= 0 && fieldIndex + fieldValues.length > 0 && fieldValues[0 - fieldIndex]) {
-      where.v0 = fieldValues[0 - fieldIndex]
-    }
-
-    if (fieldIndex <= 1 && fieldIndex + fieldValues.length > 1 && fieldValues[1 - fieldIndex]) {
-      where.v1 = fieldValues[1 - fieldIndex]
-    }
-
-    if (fieldIndex <= 2 && fieldIndex + fieldValues.length > 2 && fieldValues[2 - fieldIndex]) {
-      where.v2 = fieldValues[2 - fieldIndex]
-    }
-
-    if (fieldIndex <= 3 && fieldIndex + fieldValues.length > 3 && fieldValues[3 - fieldIndex]) {
-      where.v3 = fieldValues[3 - fieldIndex]
-    }
-
-    if (fieldIndex <= 4 && fieldIndex + fieldValues.length > 4 && fieldValues[4 - fieldIndex]) {
-      where.v4 = fieldValues[4 - fieldIndex]
-    }
-
-    if (fieldIndex <= 5 && fieldIndex + fieldValues.length > 5 && fieldValues[5 - fieldIndex]) {
-      where.v5 = fieldValues[5 - fieldIndex]
-    }
     const options = {}
-    if (this.isSynced) options.session = await this.getTransaction()
-    await CasbinRule.deleteMany(where, options)
+    try {
+      if (this.isSynced) options.session = await this.getTransaction()
+      const where = ptype ? { p_type: ptype } : {}
+
+      if (fieldIndex <= 0 && fieldIndex + fieldValues.length > 0 && fieldValues[0 - fieldIndex]) {
+        where.v0 = fieldValues[0 - fieldIndex]
+      }
+
+      if (fieldIndex <= 1 && fieldIndex + fieldValues.length > 1 && fieldValues[1 - fieldIndex]) {
+        where.v1 = fieldValues[1 - fieldIndex]
+      }
+
+      if (fieldIndex <= 2 && fieldIndex + fieldValues.length > 2 && fieldValues[2 - fieldIndex]) {
+        where.v2 = fieldValues[2 - fieldIndex]
+      }
+
+      if (fieldIndex <= 3 && fieldIndex + fieldValues.length > 3 && fieldValues[3 - fieldIndex]) {
+        where.v3 = fieldValues[3 - fieldIndex]
+      }
+
+      if (fieldIndex <= 4 && fieldIndex + fieldValues.length > 4 && fieldValues[4 - fieldIndex]) {
+        where.v4 = fieldValues[4 - fieldIndex]
+      }
+
+      if (fieldIndex <= 5 && fieldIndex + fieldValues.length > 5 && fieldValues[5 - fieldIndex]) {
+        where.v5 = fieldValues[5 - fieldIndex]
+      }
+      await CasbinRule.deleteMany(where, options)
+
+      this.autoCommit && options.session && await options.session.commitTransaction()
+    } catch (err) {
+      this.autoAbort && options.session && await options.session.abortTransaction()
+      throw err
+    }
   }
 
   async close () {

@@ -39,7 +39,7 @@ async function createSyncedAdapter () {
 };
 
 async function createFailingSyncedAdapter () {
-  return MongooseAdapter.newSyncedAdapter('mongodb://localhost:27017,localhost:27018/casbin?replicaSet=rs0', MONGOOSE_OPTIONS)
+  return MongooseAdapter.newSyncedAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS)
 };
 
 async function createDisconnectedAdapter () {
