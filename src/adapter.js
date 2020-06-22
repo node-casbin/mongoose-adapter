@@ -276,8 +276,9 @@ class MongooseAdapter {
   }
 
   /**
-   * Persists one policy rule into MongoDB.
-   * This method is used by casbin and should not be called by user.
+   * Generates one policy rule ready to be saved into MongoDB.
+   * This method is used by casbin to generate Mongoose Model Object for single policy
+   * and should not be called by user.
    *
    * @param {String} ptype Policy type to save into MongoDB
    * @param {Array<String>} rule An array which consists of policy rule elements to store
