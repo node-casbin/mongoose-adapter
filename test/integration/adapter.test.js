@@ -19,7 +19,6 @@ const {
   createAdapter,
   createDisconnectedAdapter,
   createSyncedAdapter,
-  createFailingSyncedAdapter,
   basicModel,
   basicPolicy,
   rbacModel,
@@ -29,7 +28,7 @@ const {
 } = require('../helpers/helpers')
 const { newEnforcer, Model } = require('casbin')
 const CasbinRule = require('../../src/model')
-const { InvalidConnectionError } = require('../../src/errors')
+const { InvalidAdapterTypeError } = require('../../src/errors')
 
 // These tests are just smoke tests for get/set policy rules
 // We do not need to cover other aspects of casbin, since casbin itself is covered with tests
@@ -168,8 +167,8 @@ describe('MongooseAdapter', () => {
     try {
       await a.addPolicies('', 'p', [['role', 'res', 'GET'], ['role', 'res', 'POST']])
     } catch (error) {
-      assert(error instanceof InvalidConnectionError)
-      assert(error.message === 'addPolicies is not supported in non-replicaset environments')
+      assert(error instanceof InvalidAdapterTypeError)
+      assert.equal(error.message, 'addPolicies is only supported by SyncedAdapter. See newSyncedAdapter')
     }
 
     e = await newEnforcer(rbacModel, a)
@@ -199,10 +198,10 @@ describe('MongooseAdapter', () => {
     // Remove a policylist from Database
 
     try {
-      await a.removePolicies('', 'p', [['data2_admin', 'data2', 'read'], ['data2_admin', 'data2', 'write']])
+      await a.removePolicies('', 'p', [['data2_admin', 'datag1712', 'read'], ['data2_admin', 'data2', 'write']])
     } catch (error) {
-      assert(error instanceof InvalidConnectionError)
-      assert(error.message === 'removePolicies is not supported in non-replicaset environments')
+      assert(error instanceof InvalidAdapterTypeError)
+      assert.equal(error.message, 'removePolicies is only supported by SyncedAdapter. See newSyncedAdapter')
     }
     e = await newEnforcer(rbacModel, a)
 
@@ -342,7 +341,7 @@ describe('MongooseAdapter', () => {
     assert.isNotOk(await a.savePolicy(new Model()))
     assert(console.error.lastCall.firstArg.name, 'MongoError')
     assert(console.error.callCount, 1)
-    if (console.log.restore) console.error.restore()
+    if (console.error.restore) console.error.restore()
   })
 
   it('Should not store new policy rules if one of them fails', async () => {
@@ -732,24 +731,14 @@ describe('MongooseAdapter', () => {
       ['admin', 'domain2', 'data2', 'write', 'allow']])
   })
 
-  it('SyncedAdapter should fail when connecting to non-replicaset database', async () => {
-    // Create SyncedMongoAdapter
-    try {
-      await createFailingSyncedAdapter()
-    } catch (error) {
-      assert(error instanceof InvalidConnectionError)
-      assert(error.message === 'Tried to enable transactions for non - replicaset connection')
-    }
-  })
-
   it('SetSynced should fail in non-replicaset connection', async () => {
     // Create SyncedMongoAdapter
     try {
       const adapter = await createAdapter()
       adapter.setSynced(true)
     } catch (error) {
-      assert(error instanceof InvalidConnectionError)
-      assert(error.message === 'Tried to enable transactions for non-replicaset connection')
+      assert(error instanceof InvalidAdapterTypeError)
+      assert.equal(error.message, 'Tried to enable transactions for non-replicaset connection')
     }
   })
 
@@ -759,8 +748,8 @@ describe('MongooseAdapter', () => {
       const adapter = await createAdapter()
       adapter.getSession()
     } catch (error) {
-      assert(error instanceof InvalidConnectionError)
-      assert(error.message === 'Tried to start a session for non-replicaset connection')
+      assert(error instanceof InvalidAdapterTypeError)
+      assert.equal(error.message, 'Tried to start a session for non-replicaset connection')
     }
   })
 
@@ -770,8 +759,8 @@ describe('MongooseAdapter', () => {
       const adapter = await createAdapter()
       adapter.getTransaction()
     } catch (error) {
-      assert(error instanceof InvalidConnectionError)
-      assert(error.message === 'Tried to start a session for non-replicaset connection')
+      assert(error instanceof InvalidAdapterTypeError)
+      assert.equal(error.message, 'Tried to start a session for non-replicaset connection')
     }
   })
 
@@ -781,8 +770,8 @@ describe('MongooseAdapter', () => {
       const adapter = await createAdapter()
       adapter.commitTransaction()
     } catch (error) {
-      assert(error instanceof InvalidConnectionError)
-      assert(error.message === 'Tried to start a session for non-replicaset connection')
+      assert(error instanceof InvalidAdapterTypeError)
+      assert.equal(error.message, 'Tried to start a session for non-replicaset connection')
     }
   })
 
@@ -792,8 +781,8 @@ describe('MongooseAdapter', () => {
       const adapter = await createAdapter()
       adapter.abortTransaction()
     } catch (error) {
-      assert(error instanceof InvalidConnectionError)
-      assert(error.message === 'Tried to start a session for non-replicaset connection')
+      assert(error instanceof InvalidAdapterTypeError)
+      assert(error.message, 'Tried to start a session for non-replicaset connection')
     }
   })
 

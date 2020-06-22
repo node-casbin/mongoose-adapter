@@ -15,7 +15,7 @@
 const { Helper, logPrint } = require('casbin')
 const mongoose = require('mongoose')
 const CasbinRule = require('./model')
-const { AdapterError, InvalidConnectionError } = require('./errors')
+const { AdapterError, InvalidAdapterTypeError } = require('./errors')
 
 /**
  * Implements a policy adapter for casbin with MongoDB support.
@@ -43,7 +43,7 @@ class MongooseAdapter {
     // by default, adapter is not filtered
     this.isFiltered = false
     this.isSynced = false
-    this.autoAbort = this.isSynced
+    this.autoAbort = false
     this.uri = uri
     this.options = options
   }
@@ -75,7 +75,7 @@ class MongooseAdapter {
   static async newAdapter (uri, options = {}, adapterOptions = {}) {
     const adapter = new MongooseAdapter(uri, options)
     await adapter._open()
-    const { filtered, synced, autoAbort, autoCommit } = adapterOptions
+    const { filtered = false, synced = false, autoAbort = false, autoCommit = false } = adapterOptions
     adapter.setFiltered(filtered)
     adapter.setSynced(synced)
     adapter.setAutoAbort(autoAbort)
@@ -138,9 +138,7 @@ class MongooseAdapter {
    * @param {Boolean} [synced=true] Flag that represents the current state of adapter (filtered or not)
    */
   setSynced (synced = true) {
-    const conn = this.mongoseInstance.connections[0]
-    if (conn && conn.replica) this.isSynced = synced
-    else throw InvalidConnectionError('Tried to enable transactions for non-replicaset connection')
+    this.isSynced = synced
   }
 
   /**
@@ -169,8 +167,8 @@ class MongooseAdapter {
    */
   async getSession () {
     if (this.isSynced) {
-      return this.session && !this.session.hasEnded() ? this.session : CasbinRule.startSession()
-    } else throw InvalidConnectionError('Tried to start a session for non-replicaset connection')
+      return this.session && !this.session.hasEnded() ? this.session : this.mongoseInstance.startSession()
+    } else throw new InvalidAdapterTypeError('Transactions are only supported by SyncedAdapter. See newSyncedAdapter')
   }
 
   /**
@@ -181,10 +179,10 @@ class MongooseAdapter {
       if (session && (session.hasEnded && session.hasEnded.constructor && session.hasEnded.call && session.hasEnded.apply) && !session.hasEnded()) {
         this.session = session
       } else {
-        throw AdapterError('Tried to set an invalid session')
+        throw new AdapterError('Tried to set an invalid session')
       }
     } else {
-      throw InvalidConnectionError('Tried to set a session for non-replicaset connection')
+      throw new InvalidAdapterTypeError('Sessions are only supported by SyncedAdapter. See newSyncedAdapter')
     }
   }
 
@@ -196,12 +194,12 @@ class MongooseAdapter {
   async getTransaction () {
     if (this.isSynced) {
       const session = await this.getSession()
-      if (!session._serverSession.isTxnActive()) {
+      if (!session.transaction.isActive) {
         await session.startTransaction()
         logPrint('Transaction started. To commit changes use adapter.commitTransaction() or to abort use adapter.abortTransaction()')
       }
       return session
-    } else throw InvalidConnectionError('Tried to start a session for non-replicaset connection')
+    } else throw new InvalidAdapterTypeError('Transactions are only supported by SyncedAdapter. See newSyncedAdapter')
   }
 
   /**
@@ -213,7 +211,7 @@ class MongooseAdapter {
     if (this.isSynced) {
       const session = await this.getSession()
       await session.commitTransaction()
-    } else throw InvalidConnectionError('Tried to start a session for non-replicaset connection')
+    } else throw new InvalidAdapterTypeError('Transactions are only supported by SyncedAdapter. See newSyncedAdapter')
   }
 
   /**
@@ -226,7 +224,7 @@ class MongooseAdapter {
       const session = await this.getSession()
       await session.abortTransaction()
       logPrint('Transaction aborted')
-    } else throw InvalidConnectionError('Tried to start a session for non-replicaset connection')
+    } else throw new InvalidAdapterTypeError('Transactions are only supported by SyncedAdapter. See newSyncedAdapter')
   }
 
   /**
@@ -376,7 +374,7 @@ class MongooseAdapter {
       this.autoCommit && options.session && await options.session.commitTransaction()
     } catch (err) {
       this.autoAbort && options.session && await options.session.abortTransaction()
-      logPrint(err)
+      console.error(err)
       return false
     }
 
@@ -419,7 +417,7 @@ class MongooseAdapter {
   async addPolicies (sec, ptype, rules) {
     const options = {}
     if (this.isSynced) options.session = await this.getTransaction()
-    else throw InvalidConnectionError('addPolicies is not supported in non-replicaset environments')
+    else throw new InvalidAdapterTypeError('addPolicies is only supported by SyncedAdapter. See newSyncedAdapter')
     try {
       const promises = rules.map(async rule => this.addPolicy(sec, ptype, rule))
       await Promise.all(promises)
@@ -469,7 +467,7 @@ class MongooseAdapter {
     const options = {}
     try {
       if (this.isSynced) options.session = await this.getTransaction()
-      else throw InvalidConnectionError('removePolicies is not supported in non-replicaset environments')
+      else throw new InvalidAdapterTypeError('removePolicies is only supported by SyncedAdapter. See newSyncedAdapter')
 
       const promises = rules.map(async rule => this.removePolicy(sec, ptype, rule))
       await Promise.all(promises)

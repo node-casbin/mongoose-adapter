@@ -5,11 +5,11 @@ class AdapterError extends Error {
   }
 }
 
-class InvalidConnectionError extends Error {
+class InvalidAdapterTypeError extends Error {
   constructor (message) {
     super(message)
-    this.name = 'InvalidConnectionError'
+    this.name = 'InvalidAdapterTypeError'
   }
 }
 
-module.exports = { AdapterError, InvalidConnectionError }
+module.exports = { AdapterError, InvalidAdapterTypeError }
