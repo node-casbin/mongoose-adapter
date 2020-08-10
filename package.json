@@ -69,7 +69,7 @@
     "sinon": "^9.0.0"
   },
   "dependencies": {
-    "mongoose": "5.9.1"
+    "mongoose": "5.9.16"
   },
   "peerDependencies": {
     "casbin": "^5.0.7"
