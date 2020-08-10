@@ -70,7 +70,7 @@
   },
   "dependencies": {
     "casbin": "4.1.1",
-    "mongoose": "5.9.1"
+    "mongoose": "5.9.16"
   },
   "peerDependencies": {
     "casbin": "^4.1.1"
