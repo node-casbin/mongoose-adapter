@@ -87,6 +87,8 @@
     }
   },
   "nyc": {
-    "reporter": ["lcov"]
+    "reporter": [
+      "lcov"
+    ]
   }
 }
