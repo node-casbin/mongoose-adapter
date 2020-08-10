@@ -52,7 +52,7 @@
     "coverage": "nyc mocha -- --config test/.mocharc.js"
   },
   "devDependencies": {
-    "casbin": "4.1.1",
+    "casbin": "^5.0.7",
     "chai": "4.2.0",
     "coveralls": "^3.0.9",
     "cz-conventional-changelog": "3.0.2",
@@ -69,11 +69,11 @@
     "sinon": "^9.0.0"
   },
   "dependencies": {
-    "casbin": "4.1.1",
+    "casbin": "^5.0.7",
     "mongoose": "5.9.1"
   },
   "peerDependencies": {
-    "casbin": "^4.1.1"
+    "casbin": "^5.0.7"
   },
   "husky": {
     "hooks": {
@@ -87,6 +87,8 @@
     }
   },
   "nyc": {
-    "reporter": ["lcov"]
+    "reporter": [
+      "lcov"
+    ]
   }
 }
