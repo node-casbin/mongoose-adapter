@@ -81,3 +81,7 @@ typings/
 
 .idea/
 *.iml
+
+# Lock files
+package-lock.json
+yarn.lock

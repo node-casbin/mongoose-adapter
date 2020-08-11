@@ -1,6 +1,6 @@
 {
   "name": "casbin-mongoose-adapter",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Mongoose adapter for Casbin",
   "main": "src/adapter.js",
   "license": "Apache-2.0",
@@ -52,7 +52,7 @@
     "coverage": "nyc mocha -- --config test/.mocharc.js"
   },
   "devDependencies": {
-    "casbin": "^5.0.7",
+    "casbin": "^5.1.0",
     "chai": "4.2.0",
     "coveralls": "^3.0.9",
     "cz-conventional-changelog": "3.0.2",
