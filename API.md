@@ -9,7 +9,7 @@ Implements a policy adapter for casbin with MongoDB support.
     * [new MongooseAdapter(uri, [options])](#new_MongooseAdapter_new)
     * _instance_
         * [._open()](#MongooseAdapter+_open) ⇒ <code>Promise.&lt;void&gt;</code>
-        * [.setFiltered([isFiltered])](#MongooseAdapter+setFiltered)
+        * [.setFiltered([filtered])](#MongooseAdapter+setFiltered)
         * [.setSynced([synced])](#MongooseAdapter+setSynced)
         * [.setAutoAbort([abort])](#MongooseAdapter+setAutoAbort)
         * [.setAutoCommit([commit])](#MongooseAdapter+setAutoCommit)
@@ -36,7 +36,9 @@ Implements a policy adapter for casbin with MongoDB support.
 <a name="new_MongooseAdapter_new"></a>
 
 ### new MongooseAdapter(uri, [options])
-Creates a new instance of mongoose adapter for casbin.It does not wait for successfull connection to MongoDB.So, if you want to have a possibility to wait until connection successful, use newAdapter instead.
+Creates a new instance of mongoose adapter for casbin.
+It does not wait for successfull connection to MongoDB.
+So, if you want to have a possibility to wait until connection successful, use newAdapter instead.
 
 
 | Param | Type | Default | Description |
@@ -46,7 +48,8 @@ Creates a new instance of mongoose adapter for casbin.It does not wait for succ
 
 **Example**  
 ```js
-const adapter = new MongooseAdapter('MONGO_URI');const adapter = new MongooseAdapter('MONGO_URI', { mongoose_options: 'here' })
+const adapter = new MongooseAdapter('MONGO_URI');
+const adapter = new MongooseAdapter('MONGO_URI', { mongoose_options: 'here' })
 ```
 <a name="MongooseAdapter+_open"></a>
 
@@ -57,7 +60,8 @@ Opens a connection to mongoDB
 <a name="MongooseAdapter+setFiltered"></a>
 
 ### mongooseAdapter.setFiltered([isFiltered])
-Switch adapter to (non)filtered state.Casbin uses this flag to determine if it should load the whole policy from DB or not.
+Switch adapter to (non)filtered state.
+Casbin uses this flag to determine if it should load the whole policy from DB or not.
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -68,7 +72,8 @@ Switch adapter to (non)filtered state.Casbin uses this flag to determine if it 
 <a name="MongooseAdapter+setSynced"></a>
 
 ### mongooseAdapter.setSynced([synced])
-SyncedAdapter: Switch adapter to (non)synced state.This enables mongoDB transactions when loading and saving policies to DB.
+SyncedAdapter: Switch adapter to (non)synced state.
+This enables mongoDB transactions when loading and saving policies to DB.
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -79,7 +84,8 @@ SyncedAdapter: Switch adapter to (non)synced state.This enables mongoDB transac
 <a name="MongooseAdapter+setAutoAbort"></a>
 
 ### mongooseAdapter.setAutoAbort([abort])
-SyncedAdapter: Automatically abort on Error.When enabled, functions will automatically abort on error
+SyncedAdapter: Automatically abort on Error.
+When enabled, functions will automatically abort on error
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -90,7 +96,8 @@ SyncedAdapter: Automatically abort on Error.When enabled, functions will automa
 <a name="MongooseAdapter+setAutoCommit"></a>
 
 ### mongooseAdapter.setAutoCommit([commit])
-SyncedAdapter: Automatically commit after each addition.When enabled, functions will automatically commit after function has finished
+SyncedAdapter: Automatically commit after each addition.
+When enabled, functions will automatically commit after function has finished
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -113,26 +120,30 @@ SyncedAdapter: Sets current session to specific one. Do not use this unless you 
 <a name="MongooseAdapter+getTransaction"></a>
 
 ### mongooseAdapter.getTransaction() ⇒ <code>Promise.&lt;Session&gt;</code>
-SyncedAdapter: Gets active transaction or starts a new one. Transaction must be closed before changes are doneto the database. See: commitTransaction, abortTransaction
+SyncedAdapter: Gets active transaction or starts a new one. Transaction must be closed before changes are done
+to the database. See: commitTransaction, abortTransaction
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 **Returns**: <code>Promise.&lt;Session&gt;</code> - Returns a session with active transaction  
 <a name="MongooseAdapter+commitTransaction"></a>
 
 ### mongooseAdapter.commitTransaction() ⇒ <code>Promise.&lt;void&gt;</code>
-SyncedAdapter: Commits active transaction. Documents are not saved before this function is used.Transaction closes after the use of this function.
+SyncedAdapter: Commits active transaction. Documents are not saved before this function is used.
+Transaction closes after the use of this function.
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 <a name="MongooseAdapter+abortTransaction"></a>
 
 ### mongooseAdapter.abortTransaction() ⇒ <code>Promise.&lt;void&gt;</code>
-SyncedAdapter: Aborts active transaction. All Document changes within this transaction are reverted.Transaction closes after the use of this function.
+SyncedAdapter: Aborts active transaction. All Document changes within this transaction are reverted.
+Transaction closes after the use of this function.
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 <a name="MongooseAdapter+loadPolicyLine"></a>
 
 ### mongooseAdapter.loadPolicyLine(line, model)
-Loads one policy rule into casbin model.This method is used by casbin and should not be called by user.
+Loads one policy rule into casbin model.
+This method is used by casbin and should not be called by user.
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -144,7 +155,8 @@ Loads one policy rule into casbin model.This method is used by casbin and shoul
 <a name="MongooseAdapter+loadPolicy"></a>
 
 ### mongooseAdapter.loadPolicy(model) ⇒ <code>Promise.&lt;void&gt;</code>
-Implements the process of loading policy from database into enforcer.This method is used by casbin and should not be called by user.
+Implements the process of loading policy from database into enforcer.
+This method is used by casbin and should not be called by user.
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -155,7 +167,8 @@ Implements the process of loading policy from database into enforcer.This metho
 <a name="MongooseAdapter+loadFilteredPolicy"></a>
 
 ### mongooseAdapter.loadFilteredPolicy(model, [filter])
-Loads partial policy based on filter criteria.This method is used by casbin and should not be called by user.
+Loads partial policy based on filter criteria.
+This method is used by casbin and should not be called by user.
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -167,7 +180,9 @@ Loads partial policy based on filter criteria.This method is used by casbin and
 <a name="MongooseAdapter+savePolicyLine"></a>
 
 ### mongooseAdapter.savePolicyLine(ptype, rule) ⇒ <code>Object</code>
-Generates one policy rule ready to be saved into MongoDB.This method is used by casbin to generate Mongoose Model Object for single policyand should not be called by user.
+Generates one policy rule ready to be saved into MongoDB.
+This method is used by casbin to generate Mongoose Model Object for single policy
+and should not be called by user.
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 **Returns**: <code>Object</code> - Returns a created CasbinRule record for MongoDB  
@@ -180,7 +195,11 @@ Generates one policy rule ready to be saved into MongoDB.This method is used by
 <a name="MongooseAdapter+savePolicy"></a>
 
 ### mongooseAdapter.savePolicy(model) ⇒ <code>Promise.&lt;Boolean&gt;</code>
-Implements the process of saving policy from enforcer into database.If you are using replica sets with mongo, this function will use mongotransaction, so every line in the policy needs tosucceed for this totake effect.This method is used by casbin and should not be called by user.
+Implements the process of saving policy from enforcer into database.
+If you are using replica sets with mongo, this function will use mongo
+transaction, so every line in the policy needs tosucceed for this to
+take effect.
+This method is used by casbin and should not be called by user.
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -191,7 +210,8 @@ Implements the process of saving policy from enforcer into database.If you are 
 <a name="MongooseAdapter+addPolicy"></a>
 
 ### mongooseAdapter.addPolicy(sec, ptype, rule) ⇒ <code>Promise.&lt;void&gt;</code>
-Implements the process of adding policy rule.This method is used by casbin and should not be called by user.
+Implements the process of adding policy rule.
+This method is used by casbin and should not be called by user.
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -204,7 +224,8 @@ Implements the process of adding policy rule.This method is used by casbin and 
 <a name="MongooseAdapter+addPolicies"></a>
 
 ### mongooseAdapter.addPolicies(sec, ptype, rule) ⇒ <code>Promise.&lt;void&gt;</code>
-Implements the process of adding a list of policy rules.This method is used by casbin and should not be called by user.
+Implements the process of adding a list of policy rules.
+This method is used by casbin and should not be called by user.
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -217,7 +238,8 @@ Implements the process of adding a list of policy rules.This method is used by 
 <a name="MongooseAdapter+removePolicy"></a>
 
 ### mongooseAdapter.removePolicy(sec, ptype, rule) ⇒ <code>Promise.&lt;void&gt;</code>
-Implements the process of removing a list of policy rules.This method is used by casbin and should not be called by user.
+Implements the process of removing a list of policy rules.
+This method is used by casbin and should not be called by user.
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -230,7 +252,8 @@ Implements the process of removing a list of policy rules.This method is used b
 <a name="MongooseAdapter+removePolicies"></a>
 
 ### mongooseAdapter.removePolicies(sec, ptype, rules) ⇒ <code>Promise.&lt;void&gt;</code>
-Implements the process of removing a policyList rules.This method is used by casbin and should not be called by user.
+Implements the process of removing a policyList rules.
+This method is used by casbin and should not be called by user.
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -243,7 +266,8 @@ Implements the process of removing a policyList rules.This method is used by ca
 <a name="MongooseAdapter+removeFilteredPolicy"></a>
 
 ### mongooseAdapter.removeFilteredPolicy(sec, ptype, fieldIndex, ...fieldValues) ⇒ <code>Promise.&lt;void&gt;</code>
-Implements the process of removing policy rules.This method is used by casbin and should not be called by user.
+Implements the process of removing policy rules.
+This method is used by casbin and should not be called by user.
 
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -257,7 +281,9 @@ Implements the process of removing policy rules.This method is used by casbin a
 <a name="MongooseAdapter.newAdapter"></a>
 
 ### MongooseAdapter.newAdapter(uri, [options], [adapterOptions])
-Creates a new instance of mongoose adapter for casbin.Instead of constructor, it does wait for successfull connection to MongoDB.Preferable way to construct an adapter instance, is to use this static method.
+Creates a new instance of mongoose adapter for casbin.
+Instead of constructor, it does wait for successfull connection to MongoDB.
+Preferable way to construct an adapter instance, is to use this static method.
 
 **Kind**: static method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -269,12 +295,15 @@ Creates a new instance of mongoose adapter for casbin.Instead of constructor, i
 
 **Example**  
 ```js
-const adapter = await MongooseAdapter.newAdapter('MONGO_URI');const adapter = await MongooseAdapter.newAdapter('MONGO_URI', { mongoose_options: 'here' });
+const adapter = await MongooseAdapter.newAdapter('MONGO_URI');
+const adapter = await MongooseAdapter.newAdapter('MONGO_URI', { mongoose_options: 'here' });
 ```
 <a name="MongooseAdapter.newFilteredAdapter"></a>
 
 ### MongooseAdapter.newFilteredAdapter(uri, [options])
-Creates a new instance of mongoose adapter for casbin.It does the same as newAdapter, but it also sets a flag that this adapter is in filtered state.That way, casbin will not call loadPolicy() automatically.
+Creates a new instance of mongoose adapter for casbin.
+It does the same as newAdapter, but it also sets a flag that this adapter is in filtered state.
+That way, casbin will not call loadPolicy() automatically.
 
 **Kind**: static method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -285,12 +314,16 @@ Creates a new instance of mongoose adapter for casbin.It does the same as newAd
 
 **Example**  
 ```js
-const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI');const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI', { mongoose_options: 'here' });
+const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI');
+const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI', { mongoose_options: 'here' });
 ```
 <a name="MongooseAdapter.newSyncedAdapter"></a>
 
 ### MongooseAdapter.newSyncedAdapter(uri, [options], autoAbort)
-Creates a new instance of mongoose adapter for casbin.It does the same as newAdapter, but it checks wether database is a replica set. If it is, it enablestransactions for the adapter.Transactions are never commited automatically. You have to use commitTransaction to add pending changes.
+Creates a new instance of mongoose adapter for casbin.
+It does the same as newAdapter, but it checks wether database is a replica set. If it is, it enables
+transactions for the adapter.
+Transactions are never commited automatically. You have to use commitTransaction to add pending changes.
 
 **Kind**: static method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 
@@ -302,5 +335,6 @@ Creates a new instance of mongoose adapter for casbin.It does the same as newAd
 
 **Example**  
 ```js
-const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI');const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI', { mongoose_options: 'here' });
+const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI');
+const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI', { mongoose_options: 'here' });
 ```
