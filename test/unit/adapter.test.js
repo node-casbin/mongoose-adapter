@@ -26,21 +26,21 @@ describe('MongooseAdapter', () => {
     const adapter = new MongooseAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS);
 
     assert.instanceOf(adapter, MongooseAdapter);
-    assert.isFalse(adapter.isFiltered);
+    assert.isFalse(adapter.isFiltered());
   });
 
   it('Should properly create new instance via static newAdapter', async () => {
     const adapter = await MongooseAdapter.newAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS);
 
     assert.instanceOf(adapter, MongooseAdapter);
-    assert.isFalse(adapter.isFiltered);
+    assert.isFalse(adapter.isFiltered());
   });
 
   it('Should properly create filtered instance via static newFilteredAdapter', async () => {
     const adapter = await MongooseAdapter.newFilteredAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS);
 
     assert.instanceOf(adapter, MongooseAdapter);
-    assert.isTrue(adapter.isFiltered);
+    assert.isTrue(adapter.isFiltered());
   });
 
   it('Should have implemented interface for casbin', async () => {
@@ -61,8 +61,8 @@ describe('MongooseAdapter', () => {
     assert.isFunction(adapter.loadFilteredPolicy);
     assert.isFunction(adapter.setFiltered);
     assert.isFunction(adapter.setSynced);
-    assert.isBoolean(adapter.isFiltered);
-    assert.isBoolean(adapter.isFiltered);
+    assert.isFunction(adapter.isFiltered);
+    assert.isBoolean(adapter.filtered);
     assert.isBoolean(adapter.isSynced);
     assert.isFunction(adapter.savePolicyLine);
     assert.isFunction(adapter.savePolicy);

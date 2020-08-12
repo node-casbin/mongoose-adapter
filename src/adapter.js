@@ -41,7 +41,7 @@ class MongooseAdapter {
     }
 
     // by default, adapter is not filtered
-    this.isFiltered = false;
+    this.filtered = false;
     this.isSynced = false;
     this.autoAbort = false;
     this.uri = uri;
@@ -127,8 +127,16 @@ class MongooseAdapter {
    *
    * @param {Boolean} [isFiltered=true] Flag that represents the current state of adapter (filtered or not)
    */
-  setFiltered (isFiltered = true) {
-    this.isFiltered = isFiltered;
+  setFiltered (enable = true) {
+    this.filtered = enable;
+  }
+
+  /**
+   * isFiltered determines whether the filtered model is enabled for the adapter.
+   * @returns {boolean}
+   */
+  isFiltered () {
+    return this.filtered;
   }
 
   /**
