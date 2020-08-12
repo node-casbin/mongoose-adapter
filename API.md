@@ -9,7 +9,8 @@ Implements a policy adapter for casbin with MongoDB support.
     * [new MongooseAdapter(uri, [options])](#new_MongooseAdapter_new)
     * _instance_
         * [._open()](#MongooseAdapter+_open) ⇒ <code>Promise.&lt;void&gt;</code>
-        * [.setFiltered([filtered])](#MongooseAdapter+setFiltered)
+        * [.setFiltered([enable])](#MongooseAdapter+setFiltered)
+        * [.isFiltered()](#MongooseAdapter+isFiltered) ⇒ <code>boolean</code>
         * [.setSynced([synced])](#MongooseAdapter+setSynced)
         * [.setAutoAbort([abort])](#MongooseAdapter+setAutoAbort)
         * [.setAutoCommit([commit])](#MongooseAdapter+setAutoCommit)
@@ -59,7 +60,7 @@ Opens a connection to mongoDB
 **Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 <a name="MongooseAdapter+setFiltered"></a>
 
-### mongooseAdapter.setFiltered([isFiltered])
+### mongooseAdapter.setFiltered([enable])
 Switch adapter to (non)filtered state.
 Casbin uses this flag to determine if it should load the whole policy from DB or not.
 
@@ -67,8 +68,14 @@ Casbin uses this flag to determine if it should load the whole policy from DB or
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
-| [isFiltered] | <code>Boolean</code> | <code>true</code> | Flag that represents the current state of adapter (filtered or not) |
+| [enable] | <code>Boolean</code> | <code>true</code> | Flag that represents the current state of adapter (filtered or not) |
 
+<a name="MongooseAdapter+isFiltered"></a>
+
+### mongooseAdapter.isFiltered() ⇒ <code>boolean</code>
+isFiltered determines whether the filtered model is enabled for the adapter.
+
+**Kind**: instance method of [<code>MongooseAdapter</code>](#MongooseAdapter)  
 <a name="MongooseAdapter+setSynced"></a>
 
 ### mongooseAdapter.setSynced([synced])

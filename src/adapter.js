@@ -125,7 +125,7 @@ class MongooseAdapter {
    * Switch adapter to (non)filtered state.
    * Casbin uses this flag to determine if it should load the whole policy from DB or not.
    *
-   * @param {Boolean} [isFiltered=true] Flag that represents the current state of adapter (filtered or not)
+   * @param {Boolean} [enable=true] Flag that represents the current state of adapter (filtered or not)
    */
   setFiltered (enable = true) {
     this.filtered = enable;
