@@ -299,7 +299,7 @@ class MongooseAdapter {
     const options = {};
     if (this.isSynced) options.session = await this.getTransaction();
 
-    const lines = await CasbinRule.find(filter || {}, null, options);
+    const lines = await CasbinRule.find(filter || {}, null, options).lean();
 
     this.autoCommit && options.session && await options.session.commitTransaction();
     for (const line of lines) {
