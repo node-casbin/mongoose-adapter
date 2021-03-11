@@ -2,15 +2,15 @@ language: node_js
 
 node_js:
   - '10'
-  - '11'
   - '12'
+  - '14'
   - 'stable'
 
 install: npm install
 
 before_script:
 # Stop current mongo
-- sudo systemctl stop mongod 
+- sudo systemctl stop mongod
 
 # Begin modification of the default mongoDB instance
 - sudo cp .travis/mongo.conf /etc/mongodb.conf
@@ -52,7 +52,7 @@ before_script:
 - |
   mongo --quiet --eval 'rs.initiate({_id:"rs0", members: [{"_id":0, "host":"travis:27017"},{"_id":1, "host":"travis:27018"}]})'
 - mongo --quiet --port 27017 .travis/rs_status.js || { sudo cat /tmp/mongodb_rs0.log; sudo cat /tmp/mongodb_rs1.log; exit 1; }
-- mongo --quiet --eval 'rs.status()' 
+- mongo --quiet --eval 'rs.status()'
 
 script:
   - echo "Running tests against $(node -v)..."
