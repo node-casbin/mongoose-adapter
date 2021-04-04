@@ -12,8 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const { Schema } = require('mongoose');
-const mongoose = require('mongoose');
+import {Schema, Document, model} from 'mongoose';
+
+export interface IModel extends Document {
+  p_type: string;
+  v0: string;
+  v1: string;
+  v2: string;
+  v3: string;
+  v4: string;
+  v5: string;
+}
 
 const schema = new Schema({
   p_type: {
@@ -45,6 +54,10 @@ const schema = new Schema({
     type: Schema.Types.String,
     index: true
   }
-}, { collection: 'casbin_rule', minimize: false, timestamps: false });
+}, {
+  collection: 'casbin_rule',
+  minimize: false,
+  timestamps: false
+});
 
-module.exports = mongoose.model('CasbinRule', schema, 'casbin_rule');
+export default model<IModel>('CasbinRule', schema, 'casbin_rule');
