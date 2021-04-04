@@ -1,15 +1,15 @@
 class AdapterError extends Error {
-  constructor (message) {
+  constructor(message: string) {
     super(message);
     this.name = 'AdapterError';
   }
 }
 
 class InvalidAdapterTypeError extends Error {
-  constructor (message) {
+  constructor(message: string) {
     super(message);
     this.name = 'InvalidAdapterTypeError';
   }
 }
 
-module.exports = { AdapterError, InvalidAdapterTypeError };
+export {AdapterError, InvalidAdapterTypeError}
