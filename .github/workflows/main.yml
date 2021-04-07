@@ -1,4 +1,4 @@
-name: main
+name: tests
 on: [push, pull_request]
 jobs:
   test:
@@ -10,11 +10,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.3.0
-        with:
-          mongodb-version: 4.4
-          mongodb-replica-set: rs0
+      - name: Setup MongoDB
+        run: docker run -d -p 27001:27001 -p 27002:27002 -p 27003:27003 --name mongo -e "REPLICA_SET_NAME=rs0" zxilly/mongodb-rs
 
       - uses: actions/setup-node@v1
         with:
