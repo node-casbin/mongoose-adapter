@@ -13,7 +13,7 @@
 // limitations under the License.
 
 const { assert } = require('chai');
-const { MongooseAdapter } = require('../../lib/cjs/index');
+const { MongooseAdapter } = require('../../lib/cjs/adapter');
 
 console.log(MongooseAdapter);
 
@@ -25,28 +25,28 @@ describe('MongooseAdapter', () => {
   });
 
   it('Should properly instantiate adapter', async () => {
-    const adapter = new MongooseAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS);
+    const adapter = new MongooseAdapter('mongodb://localhost:27001/casbin', MONGOOSE_OPTIONS);
 
     assert.instanceOf(adapter, MongooseAdapter);
     assert.isFalse(adapter.isFiltered());
   });
 
   it('Should properly create new instance via static newAdapter', async () => {
-    const adapter = await MongooseAdapter.newAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS);
+    const adapter = await MongooseAdapter.newAdapter('mongodb://localhost:27001/casbin', MONGOOSE_OPTIONS);
 
     assert.instanceOf(adapter, MongooseAdapter);
     assert.isFalse(adapter.isFiltered());
   });
 
   it('Should properly create filtered instance via static newFilteredAdapter', async () => {
-    const adapter = await MongooseAdapter.newFilteredAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS);
+    const adapter = await MongooseAdapter.newFilteredAdapter('mongodb://localhost:27001/casbin', MONGOOSE_OPTIONS);
 
     assert.instanceOf(adapter, MongooseAdapter);
     assert.isTrue(adapter.isFiltered());
   });
 
   it('Should have implemented interface for casbin', async () => {
-    const adapter = new MongooseAdapter('mongodb://localhost:27017/casbin', MONGOOSE_OPTIONS);
+    const adapter = new MongooseAdapter('mongodb://localhost:27001/casbin', MONGOOSE_OPTIONS);
 
     assert.isFunction(MongooseAdapter.newAdapter);
     assert.isFunction(MongooseAdapter.newFilteredAdapter);

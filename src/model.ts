@@ -60,4 +60,6 @@ const schema = new Schema({
   timestamps: false
 });
 
-export default model<IModel>('CasbinRule', schema, 'casbin_rule');
+export const CasbinRule = model<IModel>('CasbinRule', schema, 'casbin_rule');
+
+export default CasbinRule

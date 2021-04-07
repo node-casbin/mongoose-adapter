@@ -18,14 +18,14 @@ import CasbinRule, {IModel} from './model'
 import {AdapterError, InvalidAdapterTypeError} from "./errors";
 import {ClientSession} from "mongoose";
 
-interface MongooseAdapterOptions {
+export interface MongooseAdapterOptions {
   filtered?: boolean,
   synced?: boolean,
   autoAbort?: boolean,
   autoCommit?: boolean
 }
 
-interface policyLine {
+export interface policyLine {
   p_type?: string,
   v0?: string,
   v1?: string,
@@ -35,7 +35,7 @@ interface policyLine {
   v5?: string,
 }
 
-interface sessionOption {
+export interface sessionOption {
   session?: ClientSession
 }
 
@@ -44,7 +44,7 @@ interface sessionOption {
  *
  * @class
  */
-class MongooseAdapter {
+export class MongooseAdapter {
   private filtered: boolean;
   private isSynced: boolean;
   private uri: string;
@@ -296,7 +296,7 @@ class MongooseAdapter {
       lineText += ', ' + line.v5;
     }
 
-    if (lineText){
+    if (lineText) {
       Helper.loadPolicyLine(lineText, model);
     }
   }
@@ -319,7 +319,7 @@ class MongooseAdapter {
    * @param {Model} model Enforcer model
    * @param {Object} [filter] MongoDB filter to query
    */
-  async loadFilteredPolicy(model: Model, filter: FilterQuery<IModel>|null) {
+  async loadFilteredPolicy(model: Model, filter: FilterQuery<IModel> | null) {
     if (filter) {
       this.setFiltered(true);
     } else {
@@ -532,7 +532,7 @@ class MongooseAdapter {
     const options: sessionOption = {};
     try {
       if (this.isSynced) options.session = await this.getTransaction();
-      const where:policyLine = ptype ? {p_type: ptype} : {};
+      const where: policyLine = ptype ? {p_type: ptype} : {};
 
       if (fieldIndex <= 0 && fieldIndex + fieldValues.length > 0 && fieldValues[0 - fieldIndex]) {
         where.v0 = fieldValues[0 - fieldIndex];
@@ -573,6 +573,3 @@ class MongooseAdapter {
     }
   }
 }
-
-export {MongooseAdapter}
-export default MongooseAdapter
