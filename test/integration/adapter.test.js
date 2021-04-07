@@ -27,7 +27,7 @@ const {
   rbacDenyDomainPolicy
 } = require('../helpers/helpers');
 const { newEnforcer, Model } = require('casbin');
-const CasbinRule = require('../../lib/cjs/model');
+const { CasbinRule } = require('../../lib/cjs/model');
 const { InvalidAdapterTypeError } = require('../../lib/cjs/errors');
 
 // These tests are just smoke tests for get/set policy rules
