@@ -3,7 +3,6 @@ Mongoose Adapter
 [![NPM version][npm-image]][npm-url]
 [![NPM download][download-image]][download-url]
 [![codebeat badge](https://codebeat.co/badges/c17c9ee1-da42-4db3-8047-9574ad2b23b1)](https://codebeat.co/projects/github-com-node-casbin-mongoose-adapter-master)
-[![Build Status](https://travis-ci.org/node-casbin/mongoose-adapter.svg?branch=master)](https://travis-ci.org/node-casbin/mongoose-adapter)
 [![Coverage Status](https://coveralls.io/repos/github/node-casbin/mongoose-adapter/badge.svg?branch=master)](https://coveralls.io/github/node-casbin/mongoose-adapter?branch=master)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/casbin/lobby)
 
