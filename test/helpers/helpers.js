@@ -14,7 +14,7 @@
 
 const path = require('path');
 const { newEnforcer } = require('casbin');
-const MongooseAdapter = require('../../src/adapter');
+const { MongooseAdapter } = require('../../lib/cjs/adapter');
 const basicModel = path.resolve(__dirname, '../fixtures/basic_model.conf');
 const basicPolicy = path.resolve(__dirname, '../fixtures/basic_policy.csv');
 const rbacModel = path.resolve(__dirname, '../fixtures/rbac_model.conf');
@@ -28,19 +28,22 @@ async function createEnforcer () {
   const adapter = await MongooseAdapter.newAdapter('mongodb://localhost:27017,localhost:27018/casbin?replicaSet=rs0', MONGOOSE_OPTIONS);
 
   return newEnforcer(basicModel, adapter);
-};
+}
 
 async function createAdapter (useTransaction = false) {
-  return MongooseAdapter.newAdapter('mongodb://localhost:27017,localhost:27018/casbin?replicaSet=rs0', MONGOOSE_OPTIONS, false, useTransaction);
-};
+  return MongooseAdapter.newAdapter('mongodb://localhost:27017/casbin?replicaSet=rs0', MONGOOSE_OPTIONS, {
+    filtered: false,
+    synced: useTransaction
+  });
+}
 
 async function createSyncedAdapter () {
-  return MongooseAdapter.newSyncedAdapter('mongodb://localhost:27017,localhost:27018/casbin?replicaSet=rs0', MONGOOSE_OPTIONS);
-};
+  return MongooseAdapter.newSyncedAdapter('mongodb://localhost:27017/casbin?replicaSet=rs0', MONGOOSE_OPTIONS);
+}
 
 async function createDisconnectedAdapter () {
-  return new MongooseAdapter('mongodb://localhost:27017,localhost:27018/casbin?replicaSet=rs0', MONGOOSE_OPTIONS);
-};
+  return new MongooseAdapter('mongodb://localhost:27017/casbin?replicaSet=rs0', MONGOOSE_OPTIONS);
+}
 
 module.exports = {
   createEnforcer,

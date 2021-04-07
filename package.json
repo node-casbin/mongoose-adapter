@@ -51,6 +51,7 @@
     "prepublishOnly": "npm run lint && npm run test && npm run docs",
     "test:integration": "nyc mocha -- --config test/integration/.mocharc.js",
     "test:unit": "nyc mocha -- --config test/unit/.mocharc.js",
+    "tests": "run-p test:*",
     "coverage": "nyc mocha -- --config test/.mocharc.js",
     "postpack": "run-s clean",
     "build": "run-s clean && run-p build:*",

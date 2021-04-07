@@ -82,5 +82,7 @@ typings/
 .idea/
 *.iml
 
+lib/
+
 # Lock files
 package-lock.json
