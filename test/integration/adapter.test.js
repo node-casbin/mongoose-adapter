@@ -26,7 +26,10 @@ const {
   rbacDenyDomainModel,
   rbacDenyDomainPolicy
 } = require('../helpers/helpers');
-const { newEnforcer, Model } = require('casbin');
+const {
+  newEnforcer,
+  Model
+} = require('casbin');
 const { CasbinRule } = require('../../lib/cjs/model');
 const { InvalidAdapterTypeError } = require('../../lib/cjs/errors');
 
@@ -54,7 +57,12 @@ describe('MongooseAdapter', () => {
     assert.isTrue(await enforcer.addPolicy('sub', 'obj', 'act'));
     assert.deepEqual(await enforcer.getPolicy(), [['sub', 'obj', 'act']]);
 
-    const rulesAfter = await CasbinRule.find({ p_type: 'p', v0: 'sub', v1: 'obj', v2: 'act' });
+    const rulesAfter = await CasbinRule.find({
+      p_type: 'p',
+      v0: 'sub',
+      v1: 'obj',
+      v2: 'act'
+    });
     assert.equal(rulesAfter.length, 1);
   });
 
@@ -64,6 +72,8 @@ describe('MongooseAdapter', () => {
     // Because the DB is empty at first,
     // so we need to load the policy from the file adapter (.CSV) first.
     let e = await newEnforcer(rbacModel, rbacPolicy);
+
+    await CasbinRule.createCollection();
 
     const rulesBefore = await CasbinRule.find({});
     assert.equal(rulesBefore.length, 0);
@@ -385,12 +395,22 @@ describe('MongooseAdapter', () => {
     assert.isTrue(await enforcer.addPolicy('sub', 'obj', 'act'));
     assert.deepEqual(await enforcer.getPolicy(), [['sub', 'obj', 'act']]);
 
-    const rulesAfter = await CasbinRule.find({ p_type: 'p', v0: 'sub', v1: 'obj', v2: 'act' });
+    const rulesAfter = await CasbinRule.find({
+      p_type: 'p',
+      v0: 'sub',
+      v1: 'obj',
+      v2: 'act'
+    });
     assert.equal(rulesAfter.length, 1);
     assert.isTrue(await enforcer.removePolicy('sub', 'obj', 'act'));
     assert.deepEqual(await enforcer.getPolicy(), []);
 
-    const rulesAfterDelete = await CasbinRule.find({ p_type: 'p', v0: 'sub', v1: 'obj', v2: 'act' });
+    const rulesAfterDelete = await CasbinRule.find({
+      p_type: 'p',
+      v0: 'sub',
+      v1: 'obj',
+      v2: 'act'
+    });
     assert.equal(rulesAfterDelete.length, 0);
   });
 
