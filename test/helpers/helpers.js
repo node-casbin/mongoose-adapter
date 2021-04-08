@@ -25,24 +25,24 @@ const rbacDenyDomainPolicy = path.resolve(__dirname, '../fixtures/rbac_with_doma
 const MONGOOSE_OPTIONS = { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true };
 
 async function createEnforcer () {
-  const adapter = await MongooseAdapter.newAdapter('mongodb://localhost:27001/casbin?replicaSet=rs0', MONGOOSE_OPTIONS);
+  const adapter = await MongooseAdapter.newAdapter('mongodb://localhost:27001,localhost:27002/casbin?replicaSet=rs0', MONGOOSE_OPTIONS);
 
   return newEnforcer(basicModel, adapter);
 }
 
 async function createAdapter (useTransaction = false) {
-  return MongooseAdapter.newAdapter('mongodb://localhost:27001/casbin?replicaSet=rs0', MONGOOSE_OPTIONS, {
+  return MongooseAdapter.newAdapter('mongodb://localhost:27001,localhost:27002/casbin?replicaSet=rs0', MONGOOSE_OPTIONS, {
     filtered: false,
     synced: useTransaction
   });
 }
 
 async function createSyncedAdapter () {
-  return MongooseAdapter.newSyncedAdapter('mongodb://localhost:27001/casbin?replicaSet=rs0', MONGOOSE_OPTIONS);
+  return MongooseAdapter.newSyncedAdapter('mongodb://localhost:27001,localhost:27002/casbin?replicaSet=rs0', MONGOOSE_OPTIONS);
 }
 
 async function createDisconnectedAdapter () {
-  return new MongooseAdapter('mongodb://localhost:27001/casbin?replicaSet=rs0', MONGOOSE_OPTIONS);
+  return new MongooseAdapter('mongodb://localhost:27001,localhost:27002/casbin?replicaSet=rs0', MONGOOSE_OPTIONS);
 }
 
 module.exports = {
