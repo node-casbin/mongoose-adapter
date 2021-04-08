@@ -230,6 +230,7 @@ export class MongooseAdapter {
     if (this.isSynced) {
       const session = await this.getSession();
       if (!session.inTransaction()) {
+        await CasbinRule.createCollection()
         await session.startTransaction();
         logPrint('Transaction started. To commit changes use adapter.commitTransaction() or to abort use adapter.abortTransaction()');
       }
