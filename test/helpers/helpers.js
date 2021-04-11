@@ -38,7 +38,9 @@ async function createAdapter (useTransaction = false) {
 }
 
 async function createSyncedAdapter () {
-  return MongooseAdapter.newSyncedAdapter('mongodb://localhost:27001,localhost:27002/casbin?replicaSet=rs0', MONGOOSE_OPTIONS);
+  const adapter = MongooseAdapter.newSyncedAdapter('mongodb://localhost:27001,localhost:27002/casbin?replicaSet=rs0', MONGOOSE_OPTIONS);
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return adapter;
 }
 
 async function createDisconnectedAdapter () {

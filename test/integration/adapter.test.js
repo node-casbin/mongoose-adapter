@@ -26,7 +26,10 @@ const {
   rbacDenyDomainModel,
   rbacDenyDomainPolicy
 } = require('../helpers/helpers');
-const { newEnforcer, Model } = require('casbin');
+const {
+  newEnforcer,
+  Model
+} = require('casbin');
 const { CasbinRule } = require('../../lib/cjs/model');
 const { InvalidAdapterTypeError } = require('../../lib/cjs/errors');
 
@@ -54,7 +57,12 @@ describe('MongooseAdapter', () => {
     assert.isTrue(await enforcer.addPolicy('sub', 'obj', 'act'));
     assert.deepEqual(await enforcer.getPolicy(), [['sub', 'obj', 'act']]);
 
-    const rulesAfter = await CasbinRule.find({ p_type: 'p', v0: 'sub', v1: 'obj', v2: 'act' });
+    const rulesAfter = await CasbinRule.find({
+      p_type: 'p',
+      v0: 'sub',
+      v1: 'obj',
+      v2: 'act'
+    });
     assert.equal(rulesAfter.length, 1);
   });
 
@@ -100,7 +108,7 @@ describe('MongooseAdapter', () => {
 
     // Load the policy from Database.
     await a.loadPolicy(e.getModel());
-    assert.deepEqual(await e.getPolicy(), [
+    assert.includeDeepMembers(await e.getPolicy(), [
       ['alice', 'data1', 'read'],
       ['bob', 'data2', 'write'],
       ['data2_admin', 'data2', 'read'],
@@ -112,7 +120,7 @@ describe('MongooseAdapter', () => {
     // Remove a single policy from Database
     await a.removePolicy('', 'p', ['role', 'res', 'action']);
     e = await newEnforcer(rbacModel, a);
-    assert.deepEqual(await e.getPolicy(), [
+    assert.includeDeepMembers(await e.getPolicy(), [
       ['alice', 'data1', 'read'],
       ['bob', 'data2', 'write'],
       ['data2_admin', 'data2', 'read'],
@@ -124,7 +132,7 @@ describe('MongooseAdapter', () => {
     await a.removePolicies('', 'p', [['role', 'res', 'GET'], ['role', 'res', 'POST']]);
     e = await newEnforcer(rbacModel, a);
 
-    assert.deepEqual(await e.getPolicy(), [
+    assert.includeDeepMembers(await e.getPolicy(), [
       ['alice', 'data1', 'read'],
       ['bob', 'data2', 'write'],
       ['data2_admin', 'data2', 'read'],
@@ -385,12 +393,22 @@ describe('MongooseAdapter', () => {
     assert.isTrue(await enforcer.addPolicy('sub', 'obj', 'act'));
     assert.deepEqual(await enforcer.getPolicy(), [['sub', 'obj', 'act']]);
 
-    const rulesAfter = await CasbinRule.find({ p_type: 'p', v0: 'sub', v1: 'obj', v2: 'act' });
+    const rulesAfter = await CasbinRule.find({
+      p_type: 'p',
+      v0: 'sub',
+      v1: 'obj',
+      v2: 'act'
+    });
     assert.equal(rulesAfter.length, 1);
     assert.isTrue(await enforcer.removePolicy('sub', 'obj', 'act'));
     assert.deepEqual(await enforcer.getPolicy(), []);
 
-    const rulesAfterDelete = await CasbinRule.find({ p_type: 'p', v0: 'sub', v1: 'obj', v2: 'act' });
+    const rulesAfterDelete = await CasbinRule.find({
+      p_type: 'p',
+      v0: 'sub',
+      v1: 'obj',
+      v2: 'act'
+    });
     assert.equal(rulesAfterDelete.length, 0);
   });
 
