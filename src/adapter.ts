@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {Helper, logPrint, Model} from "casbin";
-import {ConnectOptions, Mongoose, connect, FilterQuery} from "mongoose";
+import {ConnectOptions, createConnection, FilterQuery, Connection} from "mongoose";
 import CasbinRule, {IModel} from './model'
 import {AdapterError, InvalidAdapterTypeError} from "./errors";
 import {ClientSession} from "mongoose";
@@ -49,7 +49,7 @@ export class MongooseAdapter {
   private isSynced: boolean;
   private uri: string;
   private options: ConnectOptions;
-  private mongoseInstance: Mongoose;
+  private connection: Connection;
   private autoAbort: boolean;
   private autoCommit: boolean;
   private session: ClientSession;
@@ -84,10 +84,11 @@ export class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async _open() {
-    await connect(this.uri, this.options)
+      await createConnection(this.uri, this.options)
       .then(instance => {
-        this.mongoseInstance = instance;
+        this.connection = instance;
       });
+
   }
 
   /**
@@ -206,7 +207,7 @@ export class MongooseAdapter {
    */
   async getSession() {
     if (this.isSynced) {
-      return this.session && this.session.inTransaction() ? this.session : this.mongoseInstance.startSession();
+      return this.session && this.session.inTransaction() ? this.session : this.connection.startSession();
     } else throw new InvalidAdapterTypeError('Transactions are only supported by SyncedAdapter. See newSyncedAdapter');
   }
 
@@ -568,9 +569,9 @@ export class MongooseAdapter {
   }
 
   async close() {
-    if (this.mongoseInstance && this.mongoseInstance.connection) {
+    if (this.connection) {
       if (this.session) await this.session.endSession();
-      await this.mongoseInstance.connection.close();
+      await this.connection.close();
     }
   }
 }

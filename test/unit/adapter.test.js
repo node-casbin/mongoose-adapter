@@ -31,6 +31,17 @@ describe('MongooseAdapter', () => {
     assert.isFalse(adapter.isFiltered());
   });
 
+  it('Should properly instantiate multiple adapters', async () => {
+    const adapter1 = new MongooseAdapter('mongodb://localhost:27001/casbin', { ...MONGOOSE_OPTIONS, autoCreate: true });
+    const adapter2 = new MongooseAdapter('mongodb://localhost:27001/casbin2', { ...MONGOOSE_OPTIONS, autoCreate: true });
+
+    assert.instanceOf(adapter1, MongooseAdapter);
+    assert.isFalse(adapter1.isFiltered());
+
+    assert.instanceOf(adapter2, MongooseAdapter);
+    assert.isFalse(adapter2.isFiltered());
+  });
+
   it('Should properly create new instance via static newAdapter', async () => {
     const adapter = await MongooseAdapter.newAdapter('mongodb://localhost:27001/casbin', MONGOOSE_OPTIONS);
 
