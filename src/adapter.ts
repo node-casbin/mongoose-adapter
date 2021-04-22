@@ -311,7 +311,6 @@ export class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async loadPolicy(model: Model) {
-    // console.log("loadPolicy", model)
     return this.loadFilteredPolicy(model, null);
   }
 
