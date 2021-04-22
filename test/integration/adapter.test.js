@@ -36,7 +36,10 @@ const { InvalidAdapterTypeError } = require('../../lib/cjs/errors');
 // These tests are just smoke tests for get/set policy rules
 // We do not need to cover other aspects of casbin, since casbin itself is covered with tests
 describe('MongooseAdapter', () => {
+  let CasbinRule;
   beforeEach(async () => {
+    const adapter = await createAdapter();
+    CasbinRule = adapter._model();
     await createEnforcer();
     await CasbinRule.deleteMany();
   });
@@ -808,11 +811,11 @@ describe('MongooseAdapter', () => {
     // Create mongoAdapter
     const enforcer = await createEnforcer();
     const adapter = enforcer.getAdapter();
-    assert.equal(adapter.mongoseInstance.connection.readyState, 1, 'Connection should be open');
+    assert.equal(adapter.connection.readyState, 1, 'Connection should be open');
 
     // Connection should close
     await adapter.close();
-    assert.equal(adapter.mongoseInstance.connection.readyState, 0, 'Connection should be closed');
+    assert.equal(adapter.connection.readyState, 0, 'Connection should be closed');
   });
 
   it('Closing a closed/undefined connection should not raise an error', async () => {
@@ -820,6 +823,6 @@ describe('MongooseAdapter', () => {
     const adapter = await createDisconnectedAdapter();
     // Closing a closed connection should not raise an error
     await adapter.close();
-    assert.equal(adapter.mongoseInstance, undefined, 'mongoseInstance should be undefined');
+    assert.equal(adapter.connection, undefined, 'mongoseInstance should be undefined');
   });
 });

@@ -14,7 +14,7 @@
 
 import {Helper, logPrint, Model} from "casbin";
 import {ConnectOptions, createConnection, FilterQuery, Connection} from "mongoose";
-import CasbinRule, {IModel} from './model'
+import {casbinRuleSchema, COLLECTION_NAME, IModel, MODEL_NAME} from './model'
 import {AdapterError, InvalidAdapterTypeError} from "./errors";
 import {ClientSession} from "mongoose";
 
@@ -84,11 +84,10 @@ export class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async _open() {
-      await createConnection(this.uri, this.options)
+    await createConnection(this.uri, this.options)
       .then(instance => {
         this.connection = instance;
       });
-
   }
 
   /**
@@ -231,6 +230,7 @@ export class MongooseAdapter {
     if (this.isSynced) {
       const session = await this.getSession();
       if (!session.inTransaction()) {
+        const CasbinRule = this._model();
         await CasbinRule.createCollection()
         await session.startTransaction();
         logPrint('Transaction started. To commit changes use adapter.commitTransaction() or to abort use adapter.abortTransaction()');
@@ -311,6 +311,7 @@ export class MongooseAdapter {
    * @returns {Promise<void>}
    */
   async loadPolicy(model: Model) {
+    // console.log("loadPolicy", model)
     return this.loadFilteredPolicy(model, null);
   }
 
@@ -330,6 +331,7 @@ export class MongooseAdapter {
     const options: sessionOption = {};
     if (this.isSynced) options.session = await this.getTransaction();
 
+    const CasbinRule = this._model();
     const lines = await CasbinRule.find(filter || {}, null, options).lean();
 
     this.autoCommit && options.session && await options.session.commitTransaction();
@@ -348,6 +350,7 @@ export class MongooseAdapter {
    * @returns {Object} Returns a created CasbinRule record for MongoDB
    */
   savePolicyLine(ptype: string, rule: string[]) {
+    const CasbinRule = this._model();
     const model = new CasbinRule({p_type: ptype});
 
     if (rule.length > 0) {
@@ -410,6 +413,7 @@ export class MongooseAdapter {
         }
       }
 
+      const CasbinRule = this._model();
       await CasbinRule.collection.insertMany(lines, options);
 
       this.autoCommit && options.session && await options.session.commitTransaction();
@@ -486,6 +490,7 @@ export class MongooseAdapter {
 
       const {p_type, v0, v1, v2, v3, v4, v5} = this.savePolicyLine(ptype, rule);
 
+      const CasbinRule = this._model();
       await CasbinRule.deleteMany({p_type, v0, v1, v2, v3, v4, v5}, options);
 
       this.autoCommit && options.session && await options.session.commitTransaction();
@@ -559,6 +564,7 @@ export class MongooseAdapter {
       if (fieldIndex <= 5 && fieldIndex + fieldValues.length > 5 && fieldValues[5 - fieldIndex]) {
         where.v5 = fieldValues[5 - fieldIndex];
       }
+      const CasbinRule = this._model();
       await CasbinRule.deleteMany(where, options);
 
       this.autoCommit && options.session && await options.session.commitTransaction();
@@ -573,5 +579,13 @@ export class MongooseAdapter {
       if (this.session) await this.session.endSession();
       await this.connection.close();
     }
+  }
+
+  _model() {
+    if (!this.connection.models[MODEL_NAME]) {
+      return this.connection.model<IModel>(MODEL_NAME, casbinRuleSchema, COLLECTION_NAME);
+    }
+
+    return this.connection.model<IModel>(MODEL_NAME);
   }
 }
