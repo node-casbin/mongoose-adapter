@@ -27,6 +27,30 @@ jobs:
       - name: Run unit tests
         run: yarn run tests
 
+  coverall:
+    needs: [test]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [ ^10, ^12, ^14 ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup MongoDB
+        run: bash ./.github/mongo_setup.sh
+
+      - uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Dependency
+        run: yarn install --ignore-engines
+
+      - name: Build library
+        run: yarn run build
+
       - name: Run code coverage
         run: yarn run coverage
 
@@ -36,7 +60,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
   release:
-    needs: [test]
+    needs: [test,coverall]
     runs-on: ubuntu-latest
     steps:
       - name: Coveralls Finished
