@@ -46,9 +46,8 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "docs": "jsdoc2md \"src/**/*.ts\" > ./API.md",
     "lint": "eslint .",
-    "prepublishOnly": "npm run lint && npm run test && npm run docs",
+    "prepublishOnly": "npm run lint",
     "test:integration": "nyc mocha -- --config test/integration/.mocharc.js",
     "test:unit": "nyc mocha -- --config test/unit/.mocharc.js",
     "tests": "run-s test:*",
