@@ -14,7 +14,7 @@
 
 const path = require('path');
 const { newEnforcer } = require('casbin');
-const { MongooseAdapter } = require('../../lib/cjs/adapter');
+const MongooseAdapter = require('../../lib/cjs');
 const basicModel = path.resolve(__dirname, '../fixtures/basic_model.conf');
 const basicPolicy = path.resolve(__dirname, '../fixtures/basic_policy.csv');
 const rbacModel = path.resolve(__dirname, '../fixtures/rbac_model.conf');
