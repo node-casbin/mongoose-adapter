@@ -29,6 +29,8 @@ describe('MongooseAdapter', () => {
 
     assert.instanceOf(adapter, MongooseAdapter);
     assert.isFalse(adapter.isFiltered());
+
+    await adapter.close();
   });
 
   it('Should properly create new instance via static newAdapter', async () => {
@@ -36,6 +38,8 @@ describe('MongooseAdapter', () => {
 
     assert.instanceOf(adapter, MongooseAdapter);
     assert.isFalse(adapter.isFiltered());
+
+    await adapter.close();
   });
 
   it('Should properly create filtered instance via static newFilteredAdapter', async () => {
@@ -43,6 +47,8 @@ describe('MongooseAdapter', () => {
 
     assert.instanceOf(adapter, MongooseAdapter);
     assert.isTrue(adapter.isFiltered());
+
+    await adapter.close();
   });
 
   it('Should have implemented interface for casbin', async () => {
