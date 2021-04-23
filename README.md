@@ -16,6 +16,8 @@ Mongoose Adapter is the [Mongoose](https://github.com/Automattic/mongoose/) adap
 
 Based on [Officially Supported Databases](https://mongoosejs.com/docs/), The current supported database is MongoDB.
 
+Mongoose Adapter has been rewritten to TypeScript since v3.x.
+
 ## Getting Started
 
 Install the package as dependency in your project:
