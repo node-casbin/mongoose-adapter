@@ -13,7 +13,7 @@
 // limitations under the License.
 
 const { assert } = require('chai');
-const MongooseAdapter = require('../../lib/cjs');
+const { MongooseAdapter } = require('../../lib/cjs/adapter');
 
 const MONGOOSE_OPTIONS = { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true };
 
