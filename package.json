@@ -79,8 +79,6 @@
     "typescript": "^4.2.3"
   },
   "dependencies": {
-    "@types/mongodb": "^3.6.11",
-    "mongodb": "^3.6.5",
     "mongoose": "^5.12.3"
   },
   "peerDependencies": {
