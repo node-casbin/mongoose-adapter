@@ -333,7 +333,7 @@
   resolved "https://registry.npmjs.org/@types/json5/-/json5-0.0.29.tgz#ee28707ae94e11d2b827bcbe5270bcea7f3e71ee"
   integrity sha1-7ihweulOEdK4J7y+UnC86n8+ce4=
 
-"@types/mongodb@^3.5.27", "@types/mongodb@^3.6.11":
+"@types/mongodb@^3.5.27":
   version "3.6.12"
   resolved "https://registry.npmjs.org/@types/mongodb/-/mongodb-3.6.12.tgz#727960d34f35054d2f2ce68909e16094f742d935"
   integrity sha512-49aEzQD5VdHPxyd5dRyQdqEveAg9LanwrH8RQipnMuulwzKmODXIZRp0umtxi1eBUfEusRkoy8AVOMr+kVuFog==
@@ -3110,19 +3110,6 @@ mongodb@3.6.5:
   optionalDependencies:
     saslprep "^1.0.0"
 
-mongodb@^3.6.5:
-  version "3.6.6"
-  resolved "https://registry.npmjs.org/mongodb/-/mongodb-3.6.6.tgz#92e3658f45424c34add3003e3046c1535c534449"
-  integrity sha512-WlirMiuV1UPbej5JeCMqE93JRfZ/ZzqE7nJTwP85XzjAF4rRSeq2bGCb1cjfoHLOF06+HxADaPGqT0g3SbVT1w==
-  dependencies:
-    bl "^2.2.1"
-    bson "^1.1.4"
-    denque "^1.4.1"
-    optional-require "^1.0.2"
-    safe-buffer "^5.1.2"
-  optionalDependencies:
-    saslprep "^1.0.0"
-
 mongoose-legacy-pluralize@1.0.2:
   version "1.0.2"
   resolved "https://registry.npmjs.org/mongoose-legacy-pluralize/-/mongoose-legacy-pluralize-1.0.2.tgz#3ba9f91fa507b5186d399fb40854bff18fb563e4"
@@ -3386,11 +3373,6 @@ onetime@^2.0.0:
   integrity sha1-BnQoIw/WdEOyeUsiu6UotoZ5YtQ=
   dependencies:
     mimic-fn "^1.0.0"
-
-optional-require@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.npmjs.org/optional-require/-/optional-require-1.0.2.tgz#c6c2d05170f8578397e68521bb01d30ef8b80925"
-  integrity sha512-HZubVd6IfHsbnpdNF/ICaSAzBUEW1TievpkjY3tB4Jnk8L7+pJ3conPzUt3Mn/6OZx9uzTDOHYPGA8/AxYHBOg==
 
 optionator@^0.9.1:
   version "0.9.1"
