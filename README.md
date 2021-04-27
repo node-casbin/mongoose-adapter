@@ -32,7 +32,10 @@ Require it in a place, where you are instantiating an enforcer ([read more about
 ```javascript
 const path = require('path');
 const { newEnforcer } = require('casbin');
-const MongooseAdapter = require('casbin-mongoose-adapter');
+const { MongooseAdapter } = require('casbin-mongoose-adapter');
+
+// const MongooseAdapter = require('casbin-mongoose-adapter');
+// You should use this in v2.x
 
 const model = path.resolve(__dirname, './your_model.conf');
 const adapter = await MongooseAdapter.newAdapter('mongodb://your_mongodb_uri:27017');
@@ -47,7 +50,7 @@ Casbin itself calls adapter methods to persist updates you made through it.
 You can pass mongooose-specific options when instantiating the adapter:
 
 ```javascript
-const MongooseAdapter = require('casbin-mongoose-adapter');
+const { MongooseAdapter } = require('casbin-mongoose-adapter');
 const adapter = await MongooseAdapter.newAdapter('mongodb://your_mongodb_uri:27017', { mongoose_options: 'here' });
 ```
 
@@ -63,7 +66,7 @@ You do not need to load all the rules for all domains to make an authorization i
 For such cases, filtered adapter exists in casbin.
 
 ```javascript
-const MongooseAdapter = require('casbin-mongoose-adapter');
+const { MongooseAdapter } = require('casbin-mongoose-adapter');
 const adapter = await MongooseAdapter.newFilteredAdapter('mongodb://your_mongodb_uri:27017');
 ```
 
