@@ -385,6 +385,33 @@ describe('MongooseAdapter', () => {
     }
   });
 
+  it('Should properly update existing policy rules', async () => {
+    const enforcer = await createEnforcer();
+
+    const rulesBefore = await CasbinRule.find();
+    assert.deepEqual(rulesBefore, []);
+    assert.isTrue(await enforcer.addPolicy('sub', 'obj', 'act'));
+    assert.deepEqual(await enforcer.getPolicy(), [['sub', 'obj', 'act']]);
+
+    const rulesAfter = await CasbinRule.find({
+      p_type: 'p',
+      v0: 'sub',
+      v1: 'obj',
+      v2: 'act'
+    });
+    assert.equal(rulesAfter.length, 1);
+    assert.isTrue(await enforcer.updatePolicy(['sub', 'obj', 'act'], ['sub1', 'obj1', 'act1']));
+    assert.deepEqual(await enforcer.getPolicy(), [['sub1', 'obj1', 'act1']]);
+
+    const rulesAfterUpdate = await CasbinRule.find({
+      p_type: 'p',
+      v0: 'sub1',
+      v1: 'obj1',
+      v2: 'act1'
+    });
+    assert.equal(rulesAfterUpdate.length, 1);
+  });
+
   it('Should properly delete existing policy rules', async () => {
     const enforcer = await createEnforcer();
 
@@ -808,11 +835,11 @@ describe('MongooseAdapter', () => {
     // Create mongoAdapter
     const enforcer = await createEnforcer();
     const adapter = enforcer.getAdapter();
-    assert.equal(adapter.mongoseInstance.connection.readyState, 1, 'Connection should be open');
+    assert.equal(adapter.mongooseInstance.connection.readyState, 1, 'Connection should be open');
 
     // Connection should close
     await adapter.close();
-    assert.equal(adapter.mongoseInstance.connection.readyState, 0, 'Connection should be closed');
+    assert.equal(adapter.mongooseInstance.connection.readyState, 0, 'Connection should be closed');
   });
 
   it('Closing a closed/undefined connection should not raise an error', async () => {
@@ -820,6 +847,6 @@ describe('MongooseAdapter', () => {
     const adapter = await createDisconnectedAdapter();
     // Closing a closed connection should not raise an error
     await adapter.close();
-    assert.equal(adapter.mongoseInstance, undefined, 'mongoseInstance should be undefined');
+    assert.equal(adapter.mongooseInstance, undefined, 'mongoseInstance should be undefined');
   });
 });

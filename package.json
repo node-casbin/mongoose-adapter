@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.21.0",
-    "casbin": "^5.1.0",
+    "casbin": "^5.11.1",
     "chai": "^4.3.0",
     "coveralls": "^3.0.9",
     "cz-conventional-changelog": "^3.3.0",

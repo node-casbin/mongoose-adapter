@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Helper, logPrint, Model} from "casbin";
+import {BatchAdapter, FilteredAdapter, Helper, logPrint, Model, UpdatableAdapter} from "casbin";
 import {ConnectOptions, Mongoose, connect, FilterQuery} from "mongoose";
 import CasbinRule, {IModel} from './model'
 import {AdapterError, InvalidAdapterTypeError} from "./errors";
@@ -44,12 +44,12 @@ export interface sessionOption {
  *
  * @class
  */
-export class MongooseAdapter {
+export class MongooseAdapter implements BatchAdapter, FilteredAdapter, UpdatableAdapter {
   private filtered: boolean;
   private isSynced: boolean;
   private uri: string;
   private options: ConnectOptions;
-  private mongoseInstance: Mongoose;
+  private mongooseInstance: Mongoose;
   private autoAbort: boolean;
   private autoCommit: boolean;
   private session: ClientSession;
@@ -86,7 +86,7 @@ export class MongooseAdapter {
   async _open() {
     await connect(this.uri, this.options)
       .then(instance => {
-        this.mongoseInstance = instance;
+        this.mongooseInstance = instance;
       });
   }
 
@@ -206,7 +206,7 @@ export class MongooseAdapter {
    */
   async getSession() {
     if (this.isSynced) {
-      return this.session && this.session.inTransaction() ? this.session : this.mongoseInstance.startSession();
+      return this.session && this.session.inTransaction() ? this.session : this.mongooseInstance.startSession();
     } else throw new InvalidAdapterTypeError('Transactions are only supported by SyncedAdapter. See newSyncedAdapter');
   }
 
@@ -470,6 +470,41 @@ export class MongooseAdapter {
   }
 
   /**
+   * Implements the process of updating policy rule.
+   * This method is used by casbin and should not be called by user.
+   *
+   * @param {String} sec Section of the policy
+   * @param {String} ptype Type of the policy (e.g. "p" or "g")
+   * @param {Array<String>} oldRule Policy rule to remove from enforcer
+   * @param {Array<String>} newRule Policy rule to add into enforcer
+   * @returns {Promise<void>}
+   */
+  async updatePolicy(sec: string, ptype: string, oldRule: string[], newRule: string[]) {
+    const options: sessionOption = {};
+    try {
+      if (this.isSynced) options.session = await this.getTransaction();
+      const {p_type, v0, v1, v2, v3, v4, v5} = this.savePolicyLine(ptype, oldRule);
+      const newRuleLine = this.savePolicyLine(ptype, newRule);
+      const newModel = {
+        p_type: newRuleLine.p_type,
+        v0: newRuleLine.v0,
+        v1: newRuleLine.v1,
+        v2: newRuleLine.v2,
+        v3: newRuleLine.v3,
+        v4: newRuleLine.v4,
+        v5: newRuleLine.v5
+      }
+
+      await CasbinRule.updateOne({p_type, v0, v1, v2, v3, v4, v5}, newModel, options);
+
+      this.autoCommit && options.session && await options.session.commitTransaction();
+    } catch (err) {
+      this.autoAbort && options.session && await options.session.abortTransaction();
+      throw err;
+    }
+  }
+
+  /**
    * Implements the process of removing a list of policy rules.
    * This method is used by casbin and should not be called by user.
    *
@@ -568,9 +603,9 @@ export class MongooseAdapter {
   }
 
   async close() {
-    if (this.mongoseInstance && this.mongoseInstance.connection) {
+    if (this.mongooseInstance && this.mongooseInstance.connection) {
       if (this.session) await this.session.endSession();
-      await this.mongoseInstance.connection.close();
+      await this.mongooseInstance.connection.close();
     }
   }
 }
