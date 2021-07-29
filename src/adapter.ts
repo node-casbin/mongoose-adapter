@@ -271,30 +271,14 @@ export class MongooseAdapter {
    * @param {Object} model Casbin model to which policy rule must be loaded
    */
   loadPolicyLine(line: policyLine, model: Model) {
-    let lineText = line.p_type;
+    let lineText = `${line.p_type!}`;
 
-    if (line.v0) {
-      lineText += ', ' + line.v0;
-    }
-
-    if (line.v1) {
-      lineText += ', ' + line.v1;
-    }
-
-    if (line.v2) {
-      lineText += ', ' + line.v2;
-    }
-
-    if (line.v3) {
-      lineText += ', ' + line.v3;
-    }
-
-    if (line.v4) {
-      lineText += ', ' + line.v4;
-    }
-
-    if (line.v5) {
-      lineText += ', ' + line.v5;
+    for (const word of [line.v0, line.v1, line.v2, line.v3, line.v4, line.v5]) {
+      if (word !== undefined) {
+        lineText = `${lineText},${word}`
+      } else {
+        break
+      }
     }
 
     if (lineText) {
@@ -392,22 +376,23 @@ export class MongooseAdapter {
 
     try {
       const lines = [];
-      const policyRuleAST = model.model.get('p') instanceof Map ? model.model.get('p') : new Map();
-      const groupingPolicyAST = model.model.get('g') instanceof Map ? model.model.get('g') : new Map();
+      const policyRuleAST = model.model.get('p') instanceof Map ? model.model.get('p')! : new Map();
+      const groupingPolicyAST = model.model.get('g') instanceof Map ? model.model.get('g')! : new Map();
 
-      // @ts-ignore
+
       for (const [ptype, ast] of policyRuleAST) {
         for (const rule of ast.policy) {
           lines.push(this.savePolicyLine(ptype, rule));
         }
       }
 
-      // @ts-ignore
+
       for (const [ptype, ast] of groupingPolicyAST) {
         for (const rule of ast.policy) {
           lines.push(this.savePolicyLine(ptype, rule));
         }
       }
+
 
       await CasbinRule.collection.insertMany(lines, options);
 
