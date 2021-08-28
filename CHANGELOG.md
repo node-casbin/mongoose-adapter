@@ -1,3 +1,10 @@
+## [3.1.1](https://github.com/node-casbin/mongoose-adapter/compare/v3.1.0...v3.1.1) (2021-08-28)
+
+
+### Bug Fixes
+
+* fix wrong action with empty string ([#47](https://github.com/node-casbin/mongoose-adapter/issues/47)) ([f51fdde](https://github.com/node-casbin/mongoose-adapter/commit/f51fdde975df95a33c0b9bbcc8fdcf64b7af73a2))
+
 # [3.1.0](https://github.com/node-casbin/mongoose-adapter/compare/v3.0.1...v3.1.0) (2021-08-03)
 
 
