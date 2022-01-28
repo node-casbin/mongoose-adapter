@@ -48,7 +48,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
   private filtered: boolean;
   private isSynced: boolean;
   private uri: string;
-  private options: ConnectOptions;
+  private options?: ConnectOptions;
   private mongooseInstance: Mongoose;
   private autoAbort: boolean;
   private autoCommit: boolean;
@@ -66,7 +66,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * const adapter = new MongooseAdapter('MONGO_URI');
    * const adapter = new MongooseAdapter('MONGO_URI', { mongoose_options: 'here' })
    */
-  constructor(uri: string, options: ConnectOptions) {
+  constructor(uri: string, options?: ConnectOptions) {
     if (!uri) {
       throw new AdapterError('You must provide Mongo URI to connect to!');
     }
