@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.21.0",
-    "casbin": "^5.11.1",
+    "casbin": "^5.11.5",
     "chai": "^4.3.0",
     "coveralls": "^3.0.9",
     "cz-conventional-changelog": "^3.3.0",
@@ -79,7 +79,7 @@
     "typescript": "^4.2.3"
   },
   "dependencies": {
-    "mongoose": "^5.12.3"
+    "mongoose": "^6.0.12"
   },
   "peerDependencies": {
     "casbin": "^5.0.7"
