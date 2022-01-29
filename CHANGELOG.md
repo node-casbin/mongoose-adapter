@@ -1,3 +1,15 @@
+# [4.0.0](https://github.com/node-casbin/mongoose-adapter/compare/v3.1.1...v4.0.0) (2022-01-29)
+
+
+### Features
+
+* upgrade Mongoose ([#52](https://github.com/node-casbin/mongoose-adapter/issues/52)) ([fb53794](https://github.com/node-casbin/mongoose-adapter/commit/fb5379432397710a27570b116ea3f7459f4bd3b6))
+
+
+### BREAKING CHANGES
+
+* upgrade to Mongoose 6.x and drop Node 10 support
+
 ## [3.1.1](https://github.com/node-casbin/mongoose-adapter/compare/v3.1.0...v3.1.1) (2021-08-28)
 
 
