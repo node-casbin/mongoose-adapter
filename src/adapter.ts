@@ -45,11 +45,12 @@ export interface sessionOption {
  * @class
  */
 export class MongooseAdapter implements BatchAdapter, FilteredAdapter, UpdatableAdapter {
+  public mongooseInstance: Mongoose;
+
   private filtered: boolean;
   private isSynced: boolean;
   private uri: string;
   private options?: ConnectOptions;
-  private mongooseInstance: Mongoose;
   private autoAbort: boolean;
   private autoCommit: boolean;
   private session: ClientSession;
