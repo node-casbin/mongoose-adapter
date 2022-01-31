@@ -1,3 +1,10 @@
+## [4.0.1](https://github.com/node-casbin/mongoose-adapter/compare/v4.0.0...v4.0.1) (2022-01-31)
+
+
+### Bug Fixes
+
+* **adapter:** expose mongoose instance as public property ([#54](https://github.com/node-casbin/mongoose-adapter/issues/54)) ([31e6ef9](https://github.com/node-casbin/mongoose-adapter/commit/31e6ef9f81aebba385d0b7a0e66960c23e316c4f))
+
 # [4.0.0](https://github.com/node-casbin/mongoose-adapter/compare/v3.1.1...v4.0.0) (2022-01-29)
 
 
