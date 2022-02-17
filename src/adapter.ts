@@ -26,7 +26,7 @@ export interface MongooseAdapterOptions {
 }
 
 export interface policyLine {
-  p_type?: string,
+  ptype?: string,
   v0?: string,
   v1?: string,
   v2?: string,
@@ -272,7 +272,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * @param {Object} model Casbin model to which policy rule must be loaded
    */
   loadPolicyLine(line: policyLine, model: Model) {
-    let lineText = `${line.p_type!}`;
+    let lineText = `${line.ptype!}`;
 
     for (const word of [line.v0, line.v1, line.v2, line.v3, line.v4, line.v5]) {
       if (word !== undefined) {
@@ -332,7 +332,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * @returns {Object} Returns a created CasbinRule record for MongoDB
    */
   savePolicyLine(ptype: string, rule: string[]) {
-    const model = new CasbinRule({p_type: ptype});
+    const model = new CasbinRule({ptype: ptype});
 
     if (rule.length > 0) {
       model.v0 = rule[0];
@@ -460,19 +460,19 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * This method is used by casbin and should not be called by user.
    *
    * @param {String} sec Section of the policy
-   * @param {String} ptype Type of the policy (e.g. "p" or "g")
+   * @param {String} p_type Type of the policy (e.g. "p" or "g")
    * @param {Array<String>} oldRule Policy rule to remove from enforcer
    * @param {Array<String>} newRule Policy rule to add into enforcer
    * @returns {Promise<void>}
    */
-  async updatePolicy(sec: string, ptype: string, oldRule: string[], newRule: string[]) {
+  async updatePolicy(sec: string, p_type: string, oldRule: string[], newRule: string[]) {
     const options: sessionOption = {};
     try {
       if (this.isSynced) options.session = await this.getTransaction();
-      const {p_type, v0, v1, v2, v3, v4, v5} = this.savePolicyLine(ptype, oldRule);
-      const newRuleLine = this.savePolicyLine(ptype, newRule);
+      const {ptype, v0, v1, v2, v3, v4, v5} = this.savePolicyLine(p_type, oldRule);
+      const newRuleLine = this.savePolicyLine(p_type, newRule);
       const newModel = {
-        p_type: newRuleLine.p_type,
+        p_type: newRuleLine.ptype,
         v0: newRuleLine.v0,
         v1: newRuleLine.v1,
         v2: newRuleLine.v2,
@@ -481,7 +481,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
         v5: newRuleLine.v5
       }
 
-      await CasbinRule.updateOne({p_type, v0, v1, v2, v3, v4, v5}, newModel, options);
+      await CasbinRule.updateOne({ptype, v0, v1, v2, v3, v4, v5}, newModel, options);
 
       this.autoCommit && options.session && await options.session.commitTransaction();
     } catch (err) {
@@ -495,18 +495,18 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * This method is used by casbin and should not be called by user.
    *
    * @param {String} sec Section of the policy
-   * @param {String} ptype Type of the policy (e.g. "p" or "g")
+   * @param {String} p_type Type of the policy (e.g. "p" or "g")
    * @param {Array<String>} rule Policy rule to remove from enforcer
    * @returns {Promise<void>}
    */
-  async removePolicy(sec: string, ptype: string, rule: string[]) {
+  async removePolicy(sec: string, p_type: string, rule: string[]) {
     const options: sessionOption = {};
     try {
       if (this.isSynced) options.session = await this.getTransaction();
 
-      const {p_type, v0, v1, v2, v3, v4, v5} = this.savePolicyLine(ptype, rule);
+      const {ptype, v0, v1, v2, v3, v4, v5} = this.savePolicyLine(p_type, rule);
 
-      await CasbinRule.deleteMany({p_type, v0, v1, v2, v3, v4, v5}, options);
+      await CasbinRule.deleteMany({ptype, v0, v1, v2, v3, v4, v5}, options);
 
       this.autoCommit && options.session && await options.session.commitTransaction();
     } catch (err) {
@@ -554,7 +554,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     const options: sessionOption = {};
     try {
       if (this.isSynced) options.session = await this.getTransaction();
-      const where: policyLine = ptype ? {p_type: ptype} : {};
+      const where: policyLine = ptype ? {ptype: ptype} : {};
 
       if (fieldIndex <= 0 && fieldIndex + fieldValues.length > 0 && fieldValues[0 - fieldIndex]) {
         where.v0 = fieldValues[0 - fieldIndex];
