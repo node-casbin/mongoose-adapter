@@ -327,12 +327,12 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * This method is used by casbin to generate Mongoose Model Object for single policy
    * and should not be called by user.
    *
-   * @param {String} ptype Policy type to save into MongoDB
+   * @param {String} pType Policy type to save into MongoDB
    * @param {Array<String>} rule An array which consists of policy rule elements to store
    * @returns {Object} Returns a created CasbinRule record for MongoDB
    */
-  savePolicyLine(ptype: string, rule: string[]) {
-    const model = new CasbinRule({ptype: ptype});
+  savePolicyLine(pType: string, rule: string[]) {
+    const model = new CasbinRule({ptype: pType});
 
     if (rule.length > 0) {
       model.v0 = rule[0];
@@ -412,16 +412,16 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * This method is used by casbin and should not be called by user.
    *
    * @param {String} sec Section of the policy
-   * @param {String} ptype Type of the policy (e.g. "p" or "g")
+   * @param {String} pType Type of the policy (e.g. "p" or "g")
    * @param {Array<String>} rule Policy rule to add into enforcer
    * @returns {Promise<void>}
    */
-  async addPolicy(sec: string, ptype: string, rule: string[]) {
+  async addPolicy(sec: string, pType: string, rule: string[]) {
     const options: sessionOption = {};
     try {
       if (this.isSynced) options.session = await this.getTransaction();
 
-      const line = this.savePolicyLine(ptype, rule);
+      const line = this.savePolicyLine(pType, rule);
       await line.save(options);
 
       this.autoCommit && options.session && await options.session.commitTransaction();
@@ -436,16 +436,16 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * This method is used by casbin and should not be called by user.
    *
    * @param {String} sec Section of the policy
-   * @param {String} ptype Type of the policy (e.g. "p" or "g")
+   * @param {String} pType Type of the policy (e.g. "p" or "g")
    * @param {Array<String>} rules Policy rule to add into enforcer
    * @returns {Promise<void>}
    */
-  async addPolicies(sec: string, ptype: string, rules: Array<string[]>) {
+  async addPolicies(sec: string, pType: string, rules: Array<string[]>) {
     const options: sessionOption = {};
     if (this.isSynced) options.session = await this.getTransaction();
     else throw new InvalidAdapterTypeError('addPolicies is only supported by SyncedAdapter. See newSyncedAdapter');
     try {
-      const promises = rules.map(async rule => this.addPolicy(sec, ptype, rule));
+      const promises = rules.map(async rule => this.addPolicy(sec, pType, rule));
       await Promise.all(promises);
 
       this.autoCommit && options.session && await options.session.commitTransaction();
@@ -460,19 +460,19 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * This method is used by casbin and should not be called by user.
    *
    * @param {String} sec Section of the policy
-   * @param {String} p_type Type of the policy (e.g. "p" or "g")
+   * @param {String} pType Type of the policy (e.g. "p" or "g")
    * @param {Array<String>} oldRule Policy rule to remove from enforcer
    * @param {Array<String>} newRule Policy rule to add into enforcer
    * @returns {Promise<void>}
    */
-  async updatePolicy(sec: string, p_type: string, oldRule: string[], newRule: string[]) {
+  async updatePolicy(sec: string, pType: string, oldRule: string[], newRule: string[]) {
     const options: sessionOption = {};
     try {
       if (this.isSynced) options.session = await this.getTransaction();
-      const {ptype, v0, v1, v2, v3, v4, v5} = this.savePolicyLine(p_type, oldRule);
-      const newRuleLine = this.savePolicyLine(p_type, newRule);
+      const {ptype, v0, v1, v2, v3, v4, v5} = this.savePolicyLine(pType, oldRule);
+      const newRuleLine = this.savePolicyLine(pType, newRule);
       const newModel = {
-        p_type: newRuleLine.ptype,
+        ptype: newRuleLine.ptype,
         v0: newRuleLine.v0,
         v1: newRuleLine.v1,
         v2: newRuleLine.v2,
@@ -495,16 +495,16 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * This method is used by casbin and should not be called by user.
    *
    * @param {String} sec Section of the policy
-   * @param {String} p_type Type of the policy (e.g. "p" or "g")
+   * @param {String} pType Type of the policy (e.g. "p" or "g")
    * @param {Array<String>} rule Policy rule to remove from enforcer
    * @returns {Promise<void>}
    */
-  async removePolicy(sec: string, p_type: string, rule: string[]) {
+  async removePolicy(sec: string, pType: string, rule: string[]) {
     const options: sessionOption = {};
     try {
       if (this.isSynced) options.session = await this.getTransaction();
 
-      const {ptype, v0, v1, v2, v3, v4, v5} = this.savePolicyLine(p_type, rule);
+      const {ptype, v0, v1, v2, v3, v4, v5} = this.savePolicyLine(pType, rule);
 
       await CasbinRule.deleteMany({ptype, v0, v1, v2, v3, v4, v5}, options);
 
@@ -520,17 +520,17 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * This method is used by casbin and should not be called by user.
    *
    * @param {String} sec Section of the policy
-   * @param {String} ptype Type of the policy (e.g. "p" or "g")
+   * @param {String} pType Type of the policy (e.g. "p" or "g")
    * @param {Array<String>} rules Policy rule to remove from enforcer
    * @returns {Promise<void>}
    */
-  async removePolicies(sec: string, ptype: string, rules: Array<string[]>) {
+  async removePolicies(sec: string, pType: string, rules: Array<string[]>) {
     const options: sessionOption = {};
     try {
       if (this.isSynced) options.session = await this.getTransaction();
       else throw new InvalidAdapterTypeError('removePolicies is only supported by SyncedAdapter. See newSyncedAdapter');
 
-      const promises = rules.map(async rule => this.removePolicy(sec, ptype, rule));
+      const promises = rules.map(async rule => this.removePolicy(sec, pType, rule));
       await Promise.all(promises);
 
       this.autoCommit && options.session && await options.session.commitTransaction();
@@ -545,16 +545,16 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * This method is used by casbin and should not be called by user.
    *
    * @param {String} sec Section of the policy
-   * @param {String} ptype Type of the policy (e.g. "p" or "g")
+   * @param {String} pType Type of the policy (e.g. "p" or "g")
    * @param {Number} fieldIndex Index of the field to start filtering from
    * @param  {...String} fieldValues Policy rule to match when removing (starting from fieldIndex)
    * @returns {Promise<void>}
    */
-  async removeFilteredPolicy(sec: string, ptype: string, fieldIndex: number, ...fieldValues: string[]) {
+  async removeFilteredPolicy(sec: string, pType: string, fieldIndex: number, ...fieldValues: string[]) {
     const options: sessionOption = {};
     try {
       if (this.isSynced) options.session = await this.getTransaction();
-      const where: policyLine = ptype ? {ptype: ptype} : {};
+      const where: policyLine = pType ? {ptype: pType} : {};
 
       if (fieldIndex <= 0 && fieldIndex + fieldValues.length > 0 && fieldValues[0 - fieldIndex]) {
         where.v0 = fieldValues[0 - fieldIndex];
