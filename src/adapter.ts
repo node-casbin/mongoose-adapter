@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {BatchAdapter, FilteredAdapter, Helper, logPrint, Model, UpdatableAdapter} from "casbin";
-import {ConnectOptions, Mongoose, connect, FilterQuery} from "mongoose";
-import CasbinRule, {IModel} from './model'
-import {AdapterError, InvalidAdapterTypeError} from "./errors";
-import {ClientSession} from "mongoose";
+import { BatchAdapter, FilteredAdapter, Helper, logPrint, Model, UpdatableAdapter } from "casbin";
+import { ConnectOptions, Mongoose, connect, FilterQuery } from "mongoose";
+import CasbinRule, { IModel } from './model'
+import { AdapterError, InvalidAdapterTypeError } from "./errors";
+import { ClientSession } from "mongoose";
 
 export interface MongooseAdapterOptions {
   filtered?: boolean,
@@ -107,7 +107,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
   static async newAdapter(uri: string, options: ConnectOptions = {}, adapterOptions: MongooseAdapterOptions = {}) {
     const adapter = new MongooseAdapter(uri, options);
     await adapter._open();
-    const {filtered = false, synced = false, autoAbort = false, autoCommit = false} = adapterOptions;
+    const { filtered = false, synced = false, autoAbort = false, autoCommit = false } = adapterOptions;
     adapter.setFiltered(filtered);
     adapter.setSynced(synced);
     adapter.setAutoAbort(autoAbort);
@@ -128,7 +128,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
   static async newFilteredAdapter(uri: string, options = {}) {
-    const adapter = await MongooseAdapter.newAdapter(uri, options, {filtered: true});
+    const adapter = await MongooseAdapter.newAdapter(uri, options, { filtered: true });
     await adapter._open();
 
     return adapter;
@@ -150,7 +150,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * const adapter = await MongooseAdapter.newFilteredAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
   static async newSyncedAdapter(uri: string, options = {}, autoAbort = true, autoCommit = true) {
-    return await MongooseAdapter.newAdapter(uri, options, {synced: true, autoAbort, autoCommit});
+    return await MongooseAdapter.newAdapter(uri, options, { synced: true, autoAbort, autoCommit });
   }
 
   /**
@@ -276,7 +276,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
 
     for (const word of [line.v0, line.v1, line.v2, line.v3, line.v4, line.v5]) {
       if (word !== undefined) {
-        lineText = `${lineText},${word}`
+        lineText = `${lineText},"${word}"`
       } else {
         break
       }
@@ -332,7 +332,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * @returns {Object} Returns a created CasbinRule record for MongoDB
    */
   savePolicyLine(pType: string, rule: string[]) {
-    const model = new CasbinRule({ptype: pType});
+    const model = new CasbinRule({ ptype: pType });
 
     if (rule.length > 0) {
       model.v0 = rule[0];
@@ -469,7 +469,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     const options: sessionOption = {};
     try {
       if (this.isSynced) options.session = await this.getTransaction();
-      const {ptype, v0, v1, v2, v3, v4, v5} = this.savePolicyLine(pType, oldRule);
+      const { ptype, v0, v1, v2, v3, v4, v5 } = this.savePolicyLine(pType, oldRule);
       const newRuleLine = this.savePolicyLine(pType, newRule);
       const newModel = {
         ptype: newRuleLine.ptype,
@@ -481,7 +481,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
         v5: newRuleLine.v5
       }
 
-      await CasbinRule.updateOne({ptype, v0, v1, v2, v3, v4, v5}, newModel, options);
+      await CasbinRule.updateOne({ ptype, v0, v1, v2, v3, v4, v5 }, newModel, options);
 
       this.autoCommit && options.session && await options.session.commitTransaction();
     } catch (err) {
@@ -504,9 +504,9 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     try {
       if (this.isSynced) options.session = await this.getTransaction();
 
-      const {ptype, v0, v1, v2, v3, v4, v5} = this.savePolicyLine(pType, rule);
+      const { ptype, v0, v1, v2, v3, v4, v5 } = this.savePolicyLine(pType, rule);
 
-      await CasbinRule.deleteMany({ptype, v0, v1, v2, v3, v4, v5}, options);
+      await CasbinRule.deleteMany({ ptype, v0, v1, v2, v3, v4, v5 }, options);
 
       this.autoCommit && options.session && await options.session.commitTransaction();
     } catch (err) {
@@ -554,7 +554,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     const options: sessionOption = {};
     try {
       if (this.isSynced) options.session = await this.getTransaction();
-      const where: policyLine = pType ? {ptype: pType} : {};
+      const where: policyLine = pType ? { ptype: pType } : {};
 
       if (fieldIndex <= 0 && fieldIndex + fieldValues.length > 0 && fieldValues[0 - fieldIndex]) {
         where.v0 = fieldValues[0 - fieldIndex];
