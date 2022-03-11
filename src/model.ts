@@ -15,7 +15,7 @@
 import {Schema, Document, model} from 'mongoose';
 
 export interface IModel extends Document {
-  p_type: string;
+  ptype: string;
   v0: string;
   v1: string;
   v2: string;
@@ -25,7 +25,7 @@ export interface IModel extends Document {
 }
 
 const schema = new Schema({
-  p_type: {
+  ptype: {
     type: Schema.Types.String,
     required: true,
     index: true
