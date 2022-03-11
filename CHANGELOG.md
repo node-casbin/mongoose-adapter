@@ -1,3 +1,10 @@
+## [4.0.3](https://github.com/node-casbin/mongoose-adapter/compare/v4.0.2...v4.0.3) (2022-03-11)
+
+
+### Reverts
+
+* fix: Schema p_type to ptype ([#56](https://github.com/node-casbin/mongoose-adapter/issues/56)) ([#58](https://github.com/node-casbin/mongoose-adapter/issues/58)) ([92b3aec](https://github.com/node-casbin/mongoose-adapter/commit/92b3aec67bd0e259ed63c2cb230bee462fa406c7))
+
 ## [4.0.2](https://github.com/node-casbin/mongoose-adapter/compare/v4.0.1...v4.0.2) (2022-02-27)
 
 
