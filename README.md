@@ -70,6 +70,20 @@ const { MongooseAdapter } = require('casbin-mongoose-adapter');
 const adapter = await MongooseAdapter.newFilteredAdapter('mongodb://your_mongodb_uri:27017');
 ```
 
+### Policy Storage
+The format of the policy storage should look as shown below.
+
+⚠ The field `p_type` has been replaced with `ptype`.
+
+```js
+_id: 622c5347f6f23757d9910657
+ptype: "p"
+v0: "alice"
+v1: "data1"
+v2: "read"
+__v: 0
+```
+
 ## License
 
 [Apache-2.0](./LICENSE)
