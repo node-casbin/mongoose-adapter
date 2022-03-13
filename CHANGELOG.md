@@ -1,3 +1,17 @@
+# [5.0.0](https://github.com/node-casbin/mongoose-adapter/compare/v4.0.1...v5.0.0) (2022-03-13)
+
+
+### Bug Fixes
+
+* change p_type to ptype ([#61](https://github.com/node-casbin/mongoose-adapter/issues/61)) ([1167bed](https://github.com/node-casbin/mongoose-adapter/commit/1167bed29efc618f09fef7b7c98d8ff81520369f))
+
+
+### BREAKING CHANGES
+
+* we will finally move to `ptype`, as discussed one year ago: https://github.com/pycasbin/sqlalchemy-adapter/issues/26#issuecomment-769799410 . It is also officially documented in the official site: https://casbin.org/docs/en/adapters#:~:text=Ptype%20Column.%20Name%20of%20this%20column%20should%20be%20ptype%20instead%20of%20p_type%20or%20Ptype
+
+Co-authored-by: Shivansh Yadav <yadavshivansh@gmail.com>
+
 ## [4.0.1](https://github.com/node-casbin/mongoose-adapter/compare/v4.0.0...v4.0.1) (2022-01-31)
 
 
