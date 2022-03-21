@@ -1,3 +1,18 @@
+# [5.1.0](https://github.com/node-casbin/mongoose-adapter/compare/v5.0.0...v5.1.0) (2022-03-21)
+
+
+### Bug Fixes
+
+* format issues ([d653519](https://github.com/node-casbin/mongoose-adapter/commit/d653519ec3cfc8b1f81d2a061dbb86df1a4df9c3))
+* token parsing issues if token contains delimeter ([cd695a6](https://github.com/node-casbin/mongoose-adapter/commit/cd695a68f7f45faaae065d4e37c7d4593f7d09b9))
+* update lock file ([203cc98](https://github.com/node-casbin/mongoose-adapter/commit/203cc98d9db46e10319f89ea6ab3affe98c2098b))
+
+
+### Features
+
+* add postinstall script ([af93ec8](https://github.com/node-casbin/mongoose-adapter/commit/af93ec8025f10bd761b47c276a841e368f61bc1a))
+* check if the word is already wrapped in quotes ([d31166e](https://github.com/node-casbin/mongoose-adapter/commit/d31166e3fd8f67eb6ffcff475a68916f61ce7f60))
+
 # [5.0.0](https://github.com/node-casbin/mongoose-adapter/compare/v4.0.1...v5.0.0) (2022-03-13)
 
 
