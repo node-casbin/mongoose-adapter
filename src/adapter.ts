@@ -276,7 +276,8 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
 
     for (const word of [line.v0, line.v1, line.v2, line.v3, line.v4, line.v5]) {
       if (word !== undefined) {
-        lineText = `${lineText},${word}`
+        let wrappedWord = /^".*"$/.test(word) ? word : `"${word}"`;
+        lineText = `${lineText},${wrappedWord}`;
       } else {
         break
       }

@@ -56,7 +56,8 @@
     "build": "run-s clean && run-p build:*",
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build:esm": "tsc -p tsconfig.esm.json",
-    "clean": "rimraf lib"
+    "clean": "rimraf lib",
+    "prepare": "npm run build"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.21.0",
@@ -79,10 +80,10 @@
     "typescript": "^4.2.3"
   },
   "dependencies": {
-    "mongoose": "^6.0.12"
+    "mongoose": "^6.2.4"
   },
   "peerDependencies": {
-    "casbin": "^5.0.7"
+    "casbin": "^5.13.2"
   },
   "husky": {
     "hooks": {
