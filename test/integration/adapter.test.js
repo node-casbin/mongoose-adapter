@@ -24,25 +24,27 @@ const {
   rbacModel,
   rbacPolicy,
   rbacDenyDomainModel,
-  rbacDenyDomainPolicy
+  rbacDenyDomainPolicy, createAdapterWithDBName
 } = require('../helpers/helpers');
 const {
   newEnforcer,
   Model
 } = require('casbin');
-const { CasbinRule } = require('../../lib/cjs/model');
 const { InvalidAdapterTypeError } = require('../../lib/cjs/errors');
 
 // These tests are just smoke tests for get/set policy rules
 // We do not need to cover other aspects of casbin, since casbin itself is covered with tests
 describe('MongooseAdapter', () => {
   beforeEach(async () => {
-    await createEnforcer();
+    const enforcer = await createEnforcer();
+    const CasbinRule = enforcer.getAdapter().getCasbinRule();
     await CasbinRule.deleteMany();
   });
 
   it('Should properly load policy', async () => {
     const enforcer = await createEnforcer();
+    const CasbinRule = enforcer.getAdapter().getCasbinRule();
+
     assert.deepEqual(await enforcer.getPolicy(), []);
 
     const rules = await CasbinRule.find();
@@ -51,6 +53,7 @@ describe('MongooseAdapter', () => {
 
   it('Should properly store new policy rules', async () => {
     const enforcer = await createEnforcer();
+    const CasbinRule = enforcer.getAdapter().getCasbinRule();
 
     const rulesBefore = await CasbinRule.find();
     assert.deepEqual(rulesBefore, []);
@@ -68,6 +71,7 @@ describe('MongooseAdapter', () => {
 
   it('Should properly add and remove policies', async () => {
     const a = await createSyncedAdapter();
+    const CasbinRule = a.getCasbinRule();
 
     // Because the DB is empty at first,
     // so we need to load the policy from the file adapter (.CSV) first.
@@ -141,6 +145,7 @@ describe('MongooseAdapter', () => {
 
   it('Add Policies and Remove Policies should not work on normal adapter', async () => {
     const a = await createAdapter();
+    const CasbinRule = a.getCasbinRule();
 
     // Because the DB is empty at first,
     // so we need to load the policy from the file adapter (.CSV) first.
@@ -148,7 +153,6 @@ describe('MongooseAdapter', () => {
 
     const rulesBefore = await CasbinRule.find({});
     assert.equal(rulesBefore.length, 0);
-
     // This is a trick to save the current policy to the DB.
     // We can't call e.savePolicy() because the adapter in the enforcer is still the file adapter.
     // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
@@ -222,6 +226,8 @@ describe('MongooseAdapter', () => {
 
   it('Should properly store new policy rules from a file', async () => {
     const a = await createAdapter();
+    const CasbinRule = a.getCasbinRule();
+
     // Because the DB is empty at first,
     // so we need to load the policy from the file adapter (.CSV) first.
     let e = await newEnforcer(rbacModel, rbacPolicy);
@@ -287,6 +293,8 @@ describe('MongooseAdapter', () => {
 
   it('Empty Role Definition should not raise an error', async () => {
     const a = await createAdapter();
+    const CasbinRule = a.getCasbinRule();
+
     // Because the DB is empty at first,
     // so we need to load the policy from the file adapter (.CSV) first.
     let e = await newEnforcer(basicModel, basicPolicy);
@@ -354,6 +362,8 @@ describe('MongooseAdapter', () => {
 
   it('Should not store new policy rules if one of them fails', async () => {
     const a = await createAdapter();
+    const CasbinRule = a.getCasbinRule();
+
     // Because the DB is empty at first,
     // so we need to load the policy from the file adapter (.CSV) first.
     const e = await newEnforcer(rbacModel, rbacPolicy);
@@ -387,6 +397,7 @@ describe('MongooseAdapter', () => {
 
   it('Should properly update existing policy rules', async () => {
     const enforcer = await createEnforcer();
+    const CasbinRule = enforcer.getAdapter().getCasbinRule();
 
     const rulesBefore = await CasbinRule.find();
     assert.deepEqual(rulesBefore, []);
@@ -414,6 +425,7 @@ describe('MongooseAdapter', () => {
 
   it('Should properly delete existing policy rules', async () => {
     const enforcer = await createEnforcer();
+    const CasbinRule = enforcer.getAdapter().getCasbinRule();
 
     const rulesBefore = await CasbinRule.find();
     assert.deepEqual(rulesBefore, []);
@@ -441,6 +453,7 @@ describe('MongooseAdapter', () => {
 
   it('Should remove related policy rules via a filter', async () => {
     const a = await createAdapter();
+    const CasbinRule = a.getCasbinRule();
     // Because the DB is empty at first,
     // so we need to load the policy from the file adapter (.CSV) first.
     let e = await newEnforcer(rbacModel, rbacPolicy);
@@ -493,6 +506,7 @@ describe('MongooseAdapter', () => {
 
   it('Should remove user\'s policies and groups when using deleteUser', async () => {
     const a = await createAdapter();
+    const CasbinRule = a.getCasbinRule();
     // Because the DB is empty at first,
     // so we need to load the policy from the file adapter (.CSV) first.
     let e = await newEnforcer(rbacModel, rbacPolicy);
@@ -542,6 +556,7 @@ describe('MongooseAdapter', () => {
 
   it('Should remove user\'s policies and groups when using deleteRole', async () => {
     const a = await createAdapter();
+    const CasbinRule = a.getCasbinRule();
     // Because the DB is empty at first,
     // so we need to load the policy from the file adapter (.CSV) first.
     let e = await newEnforcer(rbacModel, rbacPolicy);
@@ -576,6 +591,7 @@ describe('MongooseAdapter', () => {
 
   it('Should properly store new complex policy rules from a file', async () => {
     const a = await createAdapter();
+    const CasbinRule = a.getCasbinRule();
     // Because the DB is empty at first,
     // so we need to load the policy from the file adapter (.CSV) first.
     let e = await newEnforcer(rbacDenyDomainModel, rbacDenyDomainPolicy);
@@ -654,6 +670,7 @@ describe('MongooseAdapter', () => {
 
   it('Should remove related complex policy rules via a filter', async () => {
     const a = await createAdapter();
+    const CasbinRule = a.getCasbinRule();
     // Because the DB is empty at first,
     // so we need to load the policy from the file adapter (.CSV) first.
     let e = await newEnforcer(rbacDenyDomainModel, rbacDenyDomainPolicy);
@@ -835,11 +852,11 @@ describe('MongooseAdapter', () => {
     // Create mongoAdapter
     const enforcer = await createEnforcer();
     const adapter = enforcer.getAdapter();
-    assert.equal(adapter.mongooseInstance.connection.readyState, 1, 'Connection should be open');
+    assert.equal(adapter.connection.readyState, 1, 'Connection should be open');
 
     // Connection should close
     await adapter.close();
-    assert.equal(adapter.mongooseInstance.connection.readyState, 0, 'Connection should be closed');
+    assert.equal(adapter.connection.readyState, 0, 'Connection should be closed');
   });
 
   it('Closing a closed/undefined connection should not raise an error', async () => {
@@ -847,6 +864,16 @@ describe('MongooseAdapter', () => {
     const adapter = await createDisconnectedAdapter();
     // Closing a closed connection should not raise an error
     await adapter.close();
-    assert.equal(adapter.mongooseInstance, undefined, 'mongoseInstance should be undefined');
+  });
+
+  it('Multiple adapter with different database names should not share the datasource', async () => {
+    const a1 = await createAdapterWithDBName('node1');
+    const e1 = await newEnforcer(rbacModel, a1);
+    const p1 = ['alice', 'data1', 'read'];
+    await e1.addPolicy(...p1);
+
+    const a2 = await createAdapterWithDBName('node2');
+    const e2 = await newEnforcer(rbacModel, a2);
+    assert.isFalse(await e2.enforce(...p1), 'Adapter should not share the datasource');
   });
 });

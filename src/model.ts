@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Schema, Document, model} from 'mongoose';
+import {Schema, Document} from 'mongoose';
 
 export interface IModel extends Document {
   ptype: string;
@@ -24,7 +24,10 @@ export interface IModel extends Document {
   v5: string;
 }
 
-const schema = new Schema({
+export const collectionName = 'casbin_rule';
+export const modelName = 'CasbinRule';
+
+export const schema = new Schema({
   ptype: {
     type: Schema.Types.String,
     required: true,
@@ -55,11 +58,7 @@ const schema = new Schema({
     index: true
   }
 }, {
-  collection: 'casbin_rule',
+  collection: collectionName,
   minimize: false,
   timestamps: false
 });
-
-export const CasbinRule = model<IModel>('CasbinRule', schema, 'casbin_rule');
-
-export default CasbinRule
