@@ -29,7 +29,16 @@ async function createEnforcer () {
 }
 
 async function createAdapter (useTransaction = false) {
-  return MongooseAdapter.newAdapter('mongodb://localhost:27001,localhost:27002/casbin?replicaSet=rs0', {
+  return MongooseAdapter.newAdapter('mongodb://localhost:27001,localhost:27002/casbin?replicaSet=rs0', {}, {
+    filtered: false,
+    synced: useTransaction
+  });
+}
+
+async function createAdapterWithDBName (dbName, useTransaction = false) {
+  return MongooseAdapter.newAdapter('mongodb://localhost:27001,localhost:27002?replicaSet=rs0', {
+    dbName: dbName
+  }, {
     filtered: false,
     synced: useTransaction
   });
@@ -48,6 +57,7 @@ async function createDisconnectedAdapter () {
 module.exports = {
   createEnforcer,
   createAdapter,
+  createAdapterWithDBName,
   createSyncedAdapter,
   createDisconnectedAdapter,
   basicModel,

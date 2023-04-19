@@ -53,7 +53,6 @@ describe('MongooseAdapter', () => {
     assert.isFunction(MongooseAdapter.newAdapter);
     assert.isFunction(MongooseAdapter.newFilteredAdapter);
     assert.isFunction(MongooseAdapter.newSyncedAdapter);
-    assert.isFunction(adapter._open);
     assert.isFunction(adapter.close);
     assert.isFunction(adapter.getSession);
     assert.isFunction(adapter.getTransaction);
@@ -73,5 +72,6 @@ describe('MongooseAdapter', () => {
     assert.isFunction(adapter.addPolicy);
     assert.isFunction(adapter.removePolicy);
     assert.isFunction(adapter.removeFilteredPolicy);
+    assert.isFunction(adapter.getCasbinRule);
   });
 });

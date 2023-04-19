@@ -13,10 +13,9 @@
 // limitations under the License.
 
 import {BatchAdapter, FilteredAdapter, Helper, logPrint, Model, UpdatableAdapter} from "casbin";
-import {ConnectOptions, Mongoose, connect, FilterQuery} from "mongoose";
-import CasbinRule, {IModel} from './model'
+import {ClientSession, Connection, ConnectOptions, createConnection, FilterQuery, Model as MongooseModel} from "mongoose";
+import {modelName, IModel, schema, collectionName} from './model'
 import {AdapterError, InvalidAdapterTypeError} from "./errors";
-import {ClientSession} from "mongoose";
 
 export interface MongooseAdapterOptions {
   filtered?: boolean,
@@ -45,7 +44,7 @@ export interface sessionOption {
  * @class
  */
 export class MongooseAdapter implements BatchAdapter, FilteredAdapter, UpdatableAdapter {
-  public mongooseInstance: Mongoose;
+  public connection?: Connection;
 
   private filtered: boolean;
   private isSynced: boolean;
@@ -54,6 +53,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
   private autoAbort: boolean;
   private autoCommit: boolean;
   private session: ClientSession;
+  private casbinRule: MongooseModel<IModel>;
 
   /**
    * Creates a new instance of mongoose adapter for casbin.
@@ -78,17 +78,8 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     this.autoAbort = false;
     this.uri = uri;
     this.options = options;
-  }
-
-  /**
-   * Opens a connection to mongoDB
-   * @returns {Promise<void>}
-   */
-  async _open() {
-    await connect(this.uri, this.options)
-      .then(instance => {
-        this.mongooseInstance = instance;
-      });
+    this.connection = createConnection(this.uri, this.options);
+    this.casbinRule = this.connection.model(modelName, schema, collectionName);
   }
 
   /**
@@ -106,7 +97,6 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    */
   static async newAdapter(uri: string, options: ConnectOptions = {}, adapterOptions: MongooseAdapterOptions = {}) {
     const adapter = new MongooseAdapter(uri, options);
-    await adapter._open();
     const {filtered = false, synced = false, autoAbort = false, autoCommit = false} = adapterOptions;
     adapter.setFiltered(filtered);
     adapter.setSynced(synced);
@@ -129,8 +119,6 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    */
   static async newFilteredAdapter(uri: string, options = {}) {
     const adapter = await MongooseAdapter.newAdapter(uri, options, {filtered: true});
-    await adapter._open();
-
     return adapter;
   }
 
@@ -207,7 +195,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    */
   async getSession() {
     if (this.isSynced) {
-      return this.session && this.session.inTransaction() ? this.session : this.mongooseInstance.startSession();
+      return this.session && this.session.inTransaction() ? this.session : this.connection!.startSession();
     } else throw new InvalidAdapterTypeError('Transactions are only supported by SyncedAdapter. See newSyncedAdapter');
   }
 
@@ -231,7 +219,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     if (this.isSynced) {
       const session = await this.getSession();
       if (!session.inTransaction()) {
-        await CasbinRule.createCollection()
+        await this.casbinRule.createCollection()
         await session.startTransaction();
         logPrint('Transaction started. To commit changes use adapter.commitTransaction() or to abort use adapter.abortTransaction()');
       }
@@ -315,7 +303,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     const options: sessionOption = {};
     if (this.isSynced) options.session = await this.getTransaction();
 
-    const lines = await CasbinRule.find(filter || {}, null, options).lean();
+    const lines = await this.casbinRule.find(filter || {}, null, options).lean();
 
     this.autoCommit && options.session && await options.session.commitTransaction();
     for (const line of lines) {
@@ -333,7 +321,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * @returns {Object} Returns a created CasbinRule record for MongoDB
    */
   savePolicyLine(pType: string, rule: string[]) {
-    const model = new CasbinRule({ptype: pType});
+    const model = new this.casbinRule({ptype: pType});
 
     if (rule.length > 0) {
       model.v0 = rule[0];
@@ -396,7 +384,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       }
 
 
-      await CasbinRule.collection.insertMany(lines, options);
+      await this.casbinRule.collection.insertMany(lines, options);
 
       this.autoCommit && options.session && await options.session.commitTransaction();
     } catch (err) {
@@ -482,7 +470,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
         v5: newRuleLine.v5
       }
 
-      await CasbinRule.updateOne({ptype, v0, v1, v2, v3, v4, v5}, newModel, options);
+      await this.casbinRule.updateOne({ptype, v0, v1, v2, v3, v4, v5}, newModel, options);
 
       this.autoCommit && options.session && await options.session.commitTransaction();
     } catch (err) {
@@ -507,7 +495,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
 
       const {ptype, v0, v1, v2, v3, v4, v5} = this.savePolicyLine(pType, rule);
 
-      await CasbinRule.deleteMany({ptype, v0, v1, v2, v3, v4, v5}, options);
+      await this.casbinRule.deleteMany({ptype, v0, v1, v2, v3, v4, v5}, options);
 
       this.autoCommit && options.session && await options.session.commitTransaction();
     } catch (err) {
@@ -580,7 +568,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       if (fieldIndex <= 5 && fieldIndex + fieldValues.length > 5 && fieldValues[5 - fieldIndex]) {
         where.v5 = fieldValues[5 - fieldIndex];
       }
-      await CasbinRule.deleteMany(where, options);
+      await this.casbinRule.deleteMany(where, options);
 
       this.autoCommit && options.session && await options.session.commitTransaction();
     } catch (err) {
@@ -590,9 +578,16 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
   }
 
   async close() {
-    if (this.mongooseInstance && this.mongooseInstance.connection) {
+    if (this.connection) {
       if (this.session) await this.session.endSession();
-      await this.mongooseInstance.connection.close();
+      await this.connection.close();
     }
+  }
+
+  /**
+   * Just for testing.
+   */
+  getCasbinRule() {
+    return this.casbinRule;
   }
 }
