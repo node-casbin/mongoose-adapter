@@ -21,7 +21,8 @@ export interface MongooseAdapterOptions {
   filtered?: boolean,
   synced?: boolean,
   autoAbort?: boolean,
-  autoCommit?: boolean
+  autoCommit?: boolean,
+  timestamps?: boolean
 }
 
 export interface policyLine {
@@ -46,6 +47,7 @@ export interface sessionOption {
 export class MongooseAdapter implements BatchAdapter, FilteredAdapter, UpdatableAdapter {
   public connection?: Connection;
 
+  private timestamps: boolean;
   private filtered: boolean;
   private isSynced: boolean;
   private uri: string;
@@ -76,10 +78,11 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     this.filtered = false;
     this.isSynced = false;
     this.autoAbort = false;
+    this.timestamps = false;
     this.uri = uri;
     this.options = options;
     this.connection = createConnection(this.uri, this.options);
-    this.casbinRule = this.connection.model(modelName, schema, collectionName);
+    this.casbinRule = this.connection.model(modelName, schema(this.timestamps), collectionName);
   }
 
   /**
@@ -97,11 +100,12 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    */
   static async newAdapter(uri: string, options: ConnectOptions = {}, adapterOptions: MongooseAdapterOptions = {}) {
     const adapter = new MongooseAdapter(uri, options);
-    const {filtered = false, synced = false, autoAbort = false, autoCommit = false} = adapterOptions;
+    const {filtered = false, synced = false, autoAbort = false, autoCommit = false, timestamps = false} = adapterOptions;
     adapter.setFiltered(filtered);
     adapter.setSynced(synced);
     adapter.setAutoAbort(autoAbort);
     adapter.setAutoCommit(autoCommit);
+    adapter.setTimestamps(timestamps)
     return adapter;
   }
 
@@ -157,6 +161,14 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    */
   isFiltered() {
     return this.filtered;
+  }
+
+  /**
+   * enable mongoose timestamp for casbin rule model
+   * @returns {boolean}
+   */
+  setTimestamps(enable = false) {
+    return this.timestamps = enable;
   }
 
   /**

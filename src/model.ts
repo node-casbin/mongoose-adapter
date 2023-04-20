@@ -27,38 +27,40 @@ export interface IModel extends Document {
 export const collectionName = 'casbin_rule';
 export const modelName = 'CasbinRule';
 
-export const schema = new Schema({
-  ptype: {
-    type: Schema.Types.String,
-    required: true,
-    index: true
-  },
-  v0: {
-    type: Schema.Types.String,
-    index: true
-  },
-  v1: {
-    type: Schema.Types.String,
-    index: true
-  },
-  v2: {
-    type: Schema.Types.String,
-    index: true
-  },
-  v3: {
-    type: Schema.Types.String,
-    index: true
-  },
-  v4: {
-    type: Schema.Types.String,
-    index: true
-  },
-  v5: {
-    type: Schema.Types.String,
-    index: true
-  }
-}, {
-  collection: collectionName,
-  minimize: false,
-  timestamps: false
-});
+export const schema = (timestamps: boolean) => {
+  return new Schema({
+    ptype: {
+      type: Schema.Types.String,
+      required: true,
+      index: true
+    },
+    v0: {
+      type: Schema.Types.String,
+      index: true
+    },
+    v1: {
+      type: Schema.Types.String,
+      index: true
+    },
+    v2: {
+      type: Schema.Types.String,
+      index: true
+    },
+    v3: {
+      type: Schema.Types.String,
+      index: true
+    },
+    v4: {
+      type: Schema.Types.String,
+      index: true
+    },
+    v5: {
+      type: Schema.Types.String,
+      index: true
+    }
+  }, {
+    collection: collectionName,
+    minimize: false,
+    timestamps: timestamps
+  });
+}
