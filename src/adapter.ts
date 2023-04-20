@@ -105,7 +105,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * const adapter = await MongooseAdapter.newAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
   static async newAdapter(uri: string, options: ConnectOptions = {}, adapterOptions: MongooseAdapterOptions = {}) {
-    const adapter = new MongooseAdapter(uri, options);
+    const adapter = new MongooseAdapter(uri, options, adapterOptions);
     const {
       filtered = false,
       synced = false,
