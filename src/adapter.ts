@@ -13,7 +13,14 @@
 // limitations under the License.
 
 import {BatchAdapter, FilteredAdapter, Helper, logPrint, Model, UpdatableAdapter} from "casbin";
-import {ClientSession, Connection, ConnectOptions, createConnection, FilterQuery, Model as MongooseModel} from "mongoose";
+import {
+  ClientSession,
+  Connection,
+  ConnectOptions,
+  createConnection,
+  FilterQuery,
+  Model as MongooseModel
+} from "mongoose";
 import {modelName, IModel, schema, collectionName} from './model'
 import {AdapterError, InvalidAdapterTypeError} from "./errors";
 
@@ -21,7 +28,8 @@ export interface MongooseAdapterOptions {
   filtered?: boolean,
   synced?: boolean,
   autoAbort?: boolean,
-  autoCommit?: boolean
+  autoCommit?: boolean,
+  timestamps?: boolean
 }
 
 export interface policyLine {
@@ -63,11 +71,12 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * @constructor
    * @param {String} uri Mongo URI where casbin rules must be persisted
    * @param {Object} [options={}] Additional options to pass on to mongoose client
+   * @param {Object} [adapterOptions={}] adapterOptions additional adapter options
    * @example
    * const adapter = new MongooseAdapter('MONGO_URI');
    * const adapter = new MongooseAdapter('MONGO_URI', { mongoose_options: 'here' })
    */
-  constructor(uri: string, options?: ConnectOptions) {
+  constructor(uri: string, options?: ConnectOptions, adapterOptions?: MongooseAdapterOptions) {
     if (!uri) {
       throw new AdapterError('You must provide Mongo URI to connect to!');
     }
@@ -79,7 +88,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     this.uri = uri;
     this.options = options;
     this.connection = createConnection(this.uri, this.options);
-    this.casbinRule = this.connection.model(modelName, schema, collectionName);
+    this.casbinRule = this.connection.model(modelName, schema(adapterOptions?.timestamps), collectionName);
   }
 
   /**
@@ -96,8 +105,13 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * const adapter = await MongooseAdapter.newAdapter('MONGO_URI', { mongoose_options: 'here' });
    */
   static async newAdapter(uri: string, options: ConnectOptions = {}, adapterOptions: MongooseAdapterOptions = {}) {
-    const adapter = new MongooseAdapter(uri, options);
-    const {filtered = false, synced = false, autoAbort = false, autoCommit = false} = adapterOptions;
+    const adapter = new MongooseAdapter(uri, options, adapterOptions);
+    const {
+      filtered = false,
+      synced = false,
+      autoAbort = false,
+      autoCommit = false,
+    } = adapterOptions;
     adapter.setFiltered(filtered);
     adapter.setSynced(synced);
     adapter.setAutoAbort(autoAbort);
