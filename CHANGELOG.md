@@ -1,3 +1,10 @@
+# [5.2.0](https://github.com/node-casbin/mongoose-adapter/compare/v5.1.1...v5.2.0) (2023-04-21)
+
+
+### Features
+
+* enable mongoose timestamps for casbin rule model via adapter options ([#71](https://github.com/node-casbin/mongoose-adapter/issues/71)) ([3dd8862](https://github.com/node-casbin/mongoose-adapter/commit/3dd8862f8eb452adc1365c96df55125561358bb1))
+
 ## [5.1.1](https://github.com/node-casbin/mongoose-adapter/compare/v5.1.0...v5.1.1) (2023-04-19)
 
 
