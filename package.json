@@ -80,7 +80,7 @@
     "typescript": "^4.2.3"
   },
   "dependencies": {
-    "mongoose": "^6.2.4"
+    "mongoose": "^7.3.4"
   },
   "peerDependencies": {
     "casbin": "^5.13.2"
