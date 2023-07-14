@@ -1,3 +1,10 @@
+# [5.3.0](https://github.com/node-casbin/mongoose-adapter/compare/v5.2.0...v5.3.0) (2023-07-14)
+
+
+### Features
+
+* update mongoose dependency to 7.3.4 ([#73](https://github.com/node-casbin/mongoose-adapter/issues/73)) ([bbc7953](https://github.com/node-casbin/mongoose-adapter/commit/bbc79536d6abf5aca92bd83e601a457104f0b02a))
+
 # [5.2.0](https://github.com/node-casbin/mongoose-adapter/compare/v5.1.1...v5.2.0) (2023-04-21)
 
 
