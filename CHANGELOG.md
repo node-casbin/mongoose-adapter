@@ -1,3 +1,10 @@
+## [5.3.1](https://github.com/node-casbin/mongoose-adapter/compare/v5.3.0...v5.3.1) (2023-08-06)
+
+
+### Bug Fixes
+
+* fix broken links ([#74](https://github.com/node-casbin/mongoose-adapter/issues/74)) ([160f44c](https://github.com/node-casbin/mongoose-adapter/commit/160f44c79452ae939865ddc5de116983c9fcc340))
+
 # [5.3.0](https://github.com/node-casbin/mongoose-adapter/compare/v5.2.0...v5.3.0) (2023-07-14)
 
 
