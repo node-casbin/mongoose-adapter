@@ -44,7 +44,7 @@
 
 ### BREAKING CHANGES
 
-* we will finally move to `ptype`, as discussed one year ago: https://github.com/pycasbin/sqlalchemy-adapter/issues/26#issuecomment-769799410 . It is also officially documented in the official site: https://casbin.org/docs/en/adapters#:~:text=Ptype%20Column.%20Name%20of%20this%20column%20should%20be%20ptype%20instead%20of%20p_type%20or%20Ptype
+* we will finally move to `ptype`, as discussed one year ago: https://github.com/pycasbin/sqlalchemy-adapter/issues/26#issuecomment-769799410 . It is also officially documented in the official site: https://casbin.org/docs/adapters/
 
 Co-authored-by: Shivansh Yadav <yadavshivansh@gmail.com>
 
