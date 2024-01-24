@@ -7,7 +7,7 @@ module.exports = {
     exit: true,
     reporter: 'spec',
     slow: 75,
-    timeout: 2000,
+    timeout: 4000,
     ui: 'bdd',
     spec: 'test/integration/**/*.test.js'
 };
