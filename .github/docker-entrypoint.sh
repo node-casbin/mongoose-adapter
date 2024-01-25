@@ -11,7 +11,7 @@ function waitForMongo {
     n=0
     until [ $n -ge 20 ]
     do
-        mongo admin --quiet --port $port --eval "db" && break
+        mongosh admin --quiet --port $port --eval "db" && break
         n=$[$n+1]
         sleep 2
     done
@@ -38,18 +38,18 @@ waitForMongo 27003
 
 echo "CONFIGURING REPLICA SET"
 CONFIG="{ _id: '$REPLICA_SET_NAME', members: [{_id: 0, host: 'localhost:27001', priority: 2 }, { _id: 1, host: 'localhost:27002' }, { _id: 2, host: 'localhost:27003' } ]}"
-mongo admin --port 27001 --eval "db.runCommand({ replSetInitiate: $CONFIG })"
+mongosh admin --port 27001 --eval "db.runCommand({ replSetInitiate: $CONFIG })"
 
 waitForMongo 27002
 waitForMongo 27003
 
-mongo admin --port 27001 --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
-mongo admin --port 27002 --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
-mongo admin --port 27003 --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
+mongosh admin --port 27001 --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
+mongosh admin --port 27002 --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
+mongosh admin --port 27003 --eval "db.runCommand({ setParameter: 1, quiet: 1 })"
 
-mongo admin --port 27001 --eval "db.adminCommand({ setParameter: 1, maxTransactionLockRequestTimeoutMillis: 5000 })"
-mongo admin --port 27002 --eval "db.adminCommand({ setParameter: 1, maxTransactionLockRequestTimeoutMillis: 5000 })"
-mongo admin --port 27003 --eval "db.adminCommand({ setParameter: 1, maxTransactionLockRequestTimeoutMillis: 5000 })"
+mongosh admin --port 27001 --eval "db.adminCommand({ setParameter: 1, maxTransactionLockRequestTimeoutMillis: 5000 })"
+mongosh admin --port 27002 --eval "db.adminCommand({ setParameter: 1, maxTransactionLockRequestTimeoutMillis: 5000 })"
+mongosh admin --port 27003 --eval "db.adminCommand({ setParameter: 1, maxTransactionLockRequestTimeoutMillis: 5000 })"
 
 echo "REPLICA SET ONLINE"
 

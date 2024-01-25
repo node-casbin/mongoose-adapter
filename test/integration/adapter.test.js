@@ -24,12 +24,10 @@ const {
   rbacModel,
   rbacPolicy,
   rbacDenyDomainModel,
-  rbacDenyDomainPolicy, createAdapterWithDBName
+  rbacDenyDomainPolicy,
+  createAdapterWithDBName
 } = require('../helpers/helpers');
-const {
-  newEnforcer,
-  Model
-} = require('casbin');
+const { newEnforcer, Model } = require('casbin');
 const { InvalidAdapterTypeError } = require('../../lib/cjs/errors');
 
 // These tests are just smoke tests for get/set policy rules
@@ -85,12 +83,16 @@ describe('MongooseAdapter', () => {
     // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
     await a.savePolicy(await e.getModel());
     const rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2]), [
-      ['p', 'alice', 'data1', 'read'],
-      ['p', 'bob', 'data2', 'write'],
-      ['p', 'data2_admin', 'data2', 'read'],
-      ['p', 'data2_admin', 'data2', 'write'],
-      ['g', 'alice', 'data2_admin', undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2]),
+      [
+        ['p', 'alice', 'data1', 'read'],
+        ['p', 'bob', 'data2', 'write'],
+        ['p', 'data2_admin', 'data2', 'read'],
+        ['p', 'data2_admin', 'data2', 'write'],
+        ['g', 'alice', 'data2_admin', undefined]
+      ]
+    );
 
     // Add a single policy to Database
     await a.addPolicy('', 'p', ['role', 'res', 'action']);
@@ -100,10 +102,14 @@ describe('MongooseAdapter', () => {
       ['bob', 'data2', 'write'],
       ['data2_admin', 'data2', 'read'],
       ['data2_admin', 'data2', 'write'],
-      ['role', 'res', 'action']]);
+      ['role', 'res', 'action']
+    ]);
 
     // Add a policyList to Database
-    await a.addPolicies('', 'p', [['role', 'res', 'GET'], ['role', 'res', 'POST']]);
+    await a.addPolicies('', 'p', [
+      ['role', 'res', 'GET'],
+      ['role', 'res', 'POST']
+    ]);
     e = await newEnforcer(rbacModel, a);
 
     // Clear the current policy.
@@ -119,7 +125,8 @@ describe('MongooseAdapter', () => {
       ['data2_admin', 'data2', 'write'],
       ['role', 'res', 'action'],
       ['role', 'res', 'GET'],
-      ['role', 'res', 'POST']]);
+      ['role', 'res', 'POST']
+    ]);
 
     // Remove a single policy from Database
     await a.removePolicy('', 'p', ['role', 'res', 'action']);
@@ -130,17 +137,22 @@ describe('MongooseAdapter', () => {
       ['data2_admin', 'data2', 'read'],
       ['data2_admin', 'data2', 'write'],
       ['role', 'res', 'GET'],
-      ['role', 'res', 'POST']]);
+      ['role', 'res', 'POST']
+    ]);
 
     // Remove a policylist from Database
-    await a.removePolicies('', 'p', [['role', 'res', 'GET'], ['role', 'res', 'POST']]);
+    await a.removePolicies('', 'p', [
+      ['role', 'res', 'GET'],
+      ['role', 'res', 'POST']
+    ]);
     e = await newEnforcer(rbacModel, a);
 
     assert.includeDeepMembers(await e.getPolicy(), [
       ['alice', 'data1', 'read'],
       ['bob', 'data2', 'write'],
       ['data2_admin', 'data2', 'read'],
-      ['data2_admin', 'data2', 'write']]);
+      ['data2_admin', 'data2', 'write']
+    ]);
   });
 
   it('Add Policies and Remove Policies should not work on normal adapter', async () => {
@@ -158,12 +170,16 @@ describe('MongooseAdapter', () => {
     // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
     await a.savePolicy(await e.getModel());
     const rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2]), [
-      ['p', 'alice', 'data1', 'read'],
-      ['p', 'bob', 'data2', 'write'],
-      ['p', 'data2_admin', 'data2', 'read'],
-      ['p', 'data2_admin', 'data2', 'write'],
-      ['g', 'alice', 'data2_admin', undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2]),
+      [
+        ['p', 'alice', 'data1', 'read'],
+        ['p', 'bob', 'data2', 'write'],
+        ['p', 'data2_admin', 'data2', 'read'],
+        ['p', 'data2_admin', 'data2', 'write'],
+        ['g', 'alice', 'data2_admin', undefined]
+      ]
+    );
 
     // Add a single policy to Database
     await a.addPolicy('', 'p', ['role', 'res', 'action']);
@@ -173,14 +189,21 @@ describe('MongooseAdapter', () => {
       ['bob', 'data2', 'write'],
       ['data2_admin', 'data2', 'read'],
       ['data2_admin', 'data2', 'write'],
-      ['role', 'res', 'action']]);
+      ['role', 'res', 'action']
+    ]);
 
     // Add policyList to Database
     try {
-      await a.addPolicies('', 'p', [['role', 'res', 'GET'], ['role', 'res', 'POST']]);
+      await a.addPolicies('', 'p', [
+        ['role', 'res', 'GET'],
+        ['role', 'res', 'POST']
+      ]);
     } catch (error) {
       assert(error instanceof InvalidAdapterTypeError);
-      assert.equal(error.message, 'addPolicies is only supported by SyncedAdapter. See newSyncedAdapter');
+      assert.equal(
+        error.message,
+        'addPolicies is only supported by SyncedAdapter. See newSyncedAdapter'
+      );
     }
 
     e = await newEnforcer(rbacModel, a);
@@ -196,7 +219,8 @@ describe('MongooseAdapter', () => {
       ['bob', 'data2', 'write'],
       ['data2_admin', 'data2', 'read'],
       ['data2_admin', 'data2', 'write'],
-      ['role', 'res', 'action']]);
+      ['role', 'res', 'action']
+    ]);
 
     // Remove a single policy from Database
     await a.removePolicy('', 'p', ['role', 'res', 'action']);
@@ -205,15 +229,22 @@ describe('MongooseAdapter', () => {
       ['alice', 'data1', 'read'],
       ['bob', 'data2', 'write'],
       ['data2_admin', 'data2', 'read'],
-      ['data2_admin', 'data2', 'write']]);
+      ['data2_admin', 'data2', 'write']
+    ]);
 
     // Remove a policylist from Database
 
     try {
-      await a.removePolicies('', 'p', [['data2_admin', 'datag1712', 'read'], ['data2_admin', 'data2', 'write']]);
+      await a.removePolicies('', 'p', [
+        ['data2_admin', 'datag1712', 'read'],
+        ['data2_admin', 'data2', 'write']
+      ]);
     } catch (error) {
       assert(error instanceof InvalidAdapterTypeError);
-      assert.equal(error.message, 'removePolicies is only supported by SyncedAdapter. See newSyncedAdapter');
+      assert.equal(
+        error.message,
+        'removePolicies is only supported by SyncedAdapter. See newSyncedAdapter'
+      );
     }
     e = await newEnforcer(rbacModel, a);
 
@@ -221,7 +252,8 @@ describe('MongooseAdapter', () => {
       ['alice', 'data1', 'read'],
       ['bob', 'data2', 'write'],
       ['data2_admin', 'data2', 'read'],
-      ['data2_admin', 'data2', 'write']]);
+      ['data2_admin', 'data2', 'write']
+    ]);
   });
 
   it('Should properly store new policy rules from a file', async () => {
@@ -240,12 +272,16 @@ describe('MongooseAdapter', () => {
     // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
     await a.savePolicy(await e.getModel());
     const rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2]), [
-      ['p', 'alice', 'data1', 'read'],
-      ['p', 'bob', 'data2', 'write'],
-      ['p', 'data2_admin', 'data2', 'read'],
-      ['p', 'data2_admin', 'data2', 'write'],
-      ['g', 'alice', 'data2_admin', undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2]),
+      [
+        ['p', 'alice', 'data1', 'read'],
+        ['p', 'bob', 'data2', 'write'],
+        ['p', 'data2_admin', 'data2', 'read'],
+        ['p', 'data2_admin', 'data2', 'write'],
+        ['g', 'alice', 'data2_admin', undefined]
+      ]
+    );
 
     // Clear the current policy.
     await e.clearPolicy();
@@ -257,7 +293,8 @@ describe('MongooseAdapter', () => {
       ['alice', 'data1', 'read'],
       ['bob', 'data2', 'write'],
       ['data2_admin', 'data2', 'read'],
-      ['data2_admin', 'data2', 'write']]);
+      ['data2_admin', 'data2', 'write']
+    ]);
 
     // Note: you don't need to look at the above code
     // if you already have a working DB with policy inside.
@@ -270,7 +307,8 @@ describe('MongooseAdapter', () => {
       ['alice', 'data1', 'read'],
       ['bob', 'data2', 'write'],
       ['data2_admin', 'data2', 'read'],
-      ['data2_admin', 'data2', 'write']]);
+      ['data2_admin', 'data2', 'write']
+    ]);
 
     // Add policy to DB
     await a.addPolicy('', 'p', ['role', 'res', 'action']);
@@ -280,7 +318,8 @@ describe('MongooseAdapter', () => {
       ['bob', 'data2', 'write'],
       ['data2_admin', 'data2', 'read'],
       ['data2_admin', 'data2', 'write'],
-      ['role', 'res', 'action']]);
+      ['role', 'res', 'action']
+    ]);
     // Remove policy from DB
     await a.removePolicy('', 'p', ['role', 'res', 'action']);
     e = await newEnforcer(rbacModel, a);
@@ -288,7 +327,8 @@ describe('MongooseAdapter', () => {
       ['alice', 'data1', 'read'],
       ['bob', 'data2', 'write'],
       ['data2_admin', 'data2', 'read'],
-      ['data2_admin', 'data2', 'write']]);
+      ['data2_admin', 'data2', 'write']
+    ]);
   });
 
   it('Empty Role Definition should not raise an error', async () => {
@@ -307,10 +347,13 @@ describe('MongooseAdapter', () => {
     // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
     await a.savePolicy(e.getModel());
     const rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2]), [
-      ['p', 'alice', 'data1', 'read'],
-      ['p', 'bob', 'data2', 'write']
-    ]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2]),
+      [
+        ['p', 'alice', 'data1', 'read'],
+        ['p', 'bob', 'data2', 'write']
+      ]
+    );
 
     // Clear the current policy.
     e.clearPolicy();
@@ -341,7 +384,8 @@ describe('MongooseAdapter', () => {
     assert.deepEqual(await e.getPolicy(), [
       ['alice', 'data1', 'read'],
       ['bob', 'data2', 'write'],
-      ['role', 'res', 'action']]);
+      ['role', 'res', 'action']
+    ]);
     // Remove policy from DB
     await a.removePolicy('', 'p', ['role', 'res', 'action']);
     e = await newEnforcer(basicModel, a);
@@ -466,31 +510,46 @@ describe('MongooseAdapter', () => {
     // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
     await a.savePolicy(e.getModel());
     let rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2]), [
-      ['p', 'alice', 'data1', 'read'],
-      ['p', 'bob', 'data2', 'write'],
-      ['p', 'data2_admin', 'data2', 'read'],
-      ['p', 'data2_admin', 'data2', 'write'],
-      ['g', 'alice', 'data2_admin', undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2]),
+      [
+        ['p', 'alice', 'data1', 'read'],
+        ['p', 'bob', 'data2', 'write'],
+        ['p', 'data2_admin', 'data2', 'read'],
+        ['p', 'data2_admin', 'data2', 'write'],
+        ['g', 'alice', 'data2_admin', undefined]
+      ]
+    );
 
     // Remove 'data2_admin' related policy rules via a filter.
     // Two rules: {'data2_admin', 'data2', 'read'}, {'data2_admin', 'data2', 'write'} are deleted.
     await a.removeFilteredPolicy(undefined, undefined, 0, 'data2_admin');
     rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2]), [
-      ['p', 'alice', 'data1', 'read'],
-      ['p', 'bob', 'data2', 'write'],
-      ['g', 'alice', 'data2_admin', undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2]),
+      [
+        ['p', 'alice', 'data1', 'read'],
+        ['p', 'bob', 'data2', 'write'],
+        ['g', 'alice', 'data2_admin', undefined]
+      ]
+    );
     e = await newEnforcer(rbacModel, a);
-    assert.deepEqual(await e.getPolicy(), [['alice', 'data1', 'read'], ['bob', 'data2', 'write']]);
+    assert.deepEqual(await e.getPolicy(), [
+      ['alice', 'data1', 'read'],
+      ['bob', 'data2', 'write']
+    ]);
 
     // Remove 'data1' related policy rules via a filter.
     // One rule: {'alice', 'data1', 'read'} is deleted.
     await a.removeFilteredPolicy(undefined, undefined, 1, 'data1');
     rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2]), [
-      ['p', 'bob', 'data2', 'write'],
-      ['g', 'alice', 'data2_admin', undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2]),
+      [
+        ['p', 'bob', 'data2', 'write'],
+        ['g', 'alice', 'data2_admin', undefined]
+      ]
+    );
     e = await newEnforcer(rbacModel, a);
     assert.deepEqual(await e.getPolicy(), [['bob', 'data2', 'write']]);
 
@@ -498,13 +557,15 @@ describe('MongooseAdapter', () => {
     // One rule: {'bob', 'data2', 'write'} is deleted.
     await a.removeFilteredPolicy(undefined, undefined, 2, 'write');
     rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2]), [
-      ['g', 'alice', 'data2_admin', undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2]),
+      [['g', 'alice', 'data2_admin', undefined]]
+    );
     e = await newEnforcer(rbacModel, a);
     assert.deepEqual(await e.getPolicy(), []);
   });
 
-  it('Should remove user\'s policies and groups when using deleteUser', async () => {
+  it("Should remove user's policies and groups when using deleteUser", async () => {
     const a = await createAdapter();
     const CasbinRule = a.getCasbinRule();
     // Because the DB is empty at first,
@@ -519,42 +580,56 @@ describe('MongooseAdapter', () => {
     // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
     await a.savePolicy(e.getModel());
     let rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2]), [
-      ['p', 'alice', 'data1', 'read'],
-      ['p', 'bob', 'data2', 'write'],
-      ['p', 'data2_admin', 'data2', 'read'],
-      ['p', 'data2_admin', 'data2', 'write'],
-      ['g', 'alice', 'data2_admin', undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2]),
+      [
+        ['p', 'alice', 'data1', 'read'],
+        ['p', 'bob', 'data2', 'write'],
+        ['p', 'data2_admin', 'data2', 'read'],
+        ['p', 'data2_admin', 'data2', 'write'],
+        ['g', 'alice', 'data2_admin', undefined]
+      ]
+    );
 
     e = await newEnforcer(rbacModel, a);
     // Remove 'alice' related policy rules via a RBAC deleteUser-function.
     // One policy: {'alice', 'data2', 'read'} and One Grouping Policy {'alice', 'data2_admin'} are deleted.
     await e.deleteUser('alice');
     rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2]), [
-      ['p', 'bob', 'data2', 'write'],
-      ['p', 'data2_admin', 'data2', 'read'],
-      ['p', 'data2_admin', 'data2', 'write']]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2]),
+      [
+        ['p', 'bob', 'data2', 'write'],
+        ['p', 'data2_admin', 'data2', 'read'],
+        ['p', 'data2_admin', 'data2', 'write']
+      ]
+    );
     e = await newEnforcer(rbacModel, a);
     assert.deepEqual(await e.getPolicy(), [
       ['bob', 'data2', 'write'],
       ['data2_admin', 'data2', 'read'],
-      ['data2_admin', 'data2', 'write']]);
+      ['data2_admin', 'data2', 'write']
+    ]);
 
     // Remove 'data1' related policy rules via a filter.
     // One rule: {'bob', 'data2', 'write'} is deleted.
     await e.deleteUser('bob');
     rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2]), [
-      ['p', 'data2_admin', 'data2', 'read'],
-      ['p', 'data2_admin', 'data2', 'write']]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2]),
+      [
+        ['p', 'data2_admin', 'data2', 'read'],
+        ['p', 'data2_admin', 'data2', 'write']
+      ]
+    );
     e = await newEnforcer(rbacModel, a);
     assert.deepEqual(await e.getPolicy(), [
       ['data2_admin', 'data2', 'read'],
-      ['data2_admin', 'data2', 'write']]);
+      ['data2_admin', 'data2', 'write']
+    ]);
   });
 
-  it('Should remove user\'s policies and groups when using deleteRole', async () => {
+  it("Should remove user's policies and groups when using deleteRole", async () => {
     const a = await createAdapter();
     const CasbinRule = a.getCasbinRule();
     // Because the DB is empty at first,
@@ -569,24 +644,33 @@ describe('MongooseAdapter', () => {
     // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
     await a.savePolicy(e.getModel());
     let rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2]), [
-      ['p', 'alice', 'data1', 'read'],
-      ['p', 'bob', 'data2', 'write'],
-      ['p', 'data2_admin', 'data2', 'read'],
-      ['p', 'data2_admin', 'data2', 'write'],
-      ['g', 'alice', 'data2_admin', undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2]),
+      [
+        ['p', 'alice', 'data1', 'read'],
+        ['p', 'bob', 'data2', 'write'],
+        ['p', 'data2_admin', 'data2', 'read'],
+        ['p', 'data2_admin', 'data2', 'write'],
+        ['g', 'alice', 'data2_admin', undefined]
+      ]
+    );
 
     e = await newEnforcer(rbacModel, a);
     // Remove 'data2_admin' related policy rules via a RBAC deleteRole-function.
-    // One policy: {'alice', 'data2', 'read'} and One Grouping Policy {'alice', 'data2_admin'} are deleted.
+    // One policy: {'data2_admin', 'data2', 'read'} and One Grouping Policy {'alice', 'data2_admin'} are deleted.
     await e.deleteRole('data2_admin');
     rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2]), [
-      ['p', 'alice', 'data1', 'read'],
-      ['p', 'bob', 'data2', 'write']]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2]),
+      [
+        ['p', 'alice', 'data1', 'read'],
+        ['p', 'bob', 'data2', 'write']
+      ]
+    );
     assert.deepEqual(await e.getPolicy(), [
       ['alice', 'data1', 'read'],
-      ['bob', 'data2', 'write']]);
+      ['bob', 'data2', 'write']
+    ]);
   });
 
   it('Should properly store new complex policy rules from a file', async () => {
@@ -604,13 +688,17 @@ describe('MongooseAdapter', () => {
     // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
     await a.savePolicy(await e.getModel());
     const rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
-      ['p', 'admin', 'domain1', 'data1', 'read', 'allow'],
-      ['p', 'admin', 'domain1', 'data1', 'write', 'allow'],
-      ['p', 'admin', 'domain2', 'data2', 'read', 'allow'],
-      ['p', 'admin', 'domain2', 'data2', 'write', 'allow'],
-      ['p', 'alice', 'domain2', 'data2', 'write', 'deny'],
-      ['g', 'alice', 'admin', 'domain2', undefined, undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]),
+      [
+        ['p', 'admin', 'domain1', 'data1', 'read', 'allow'],
+        ['p', 'admin', 'domain1', 'data1', 'write', 'allow'],
+        ['p', 'admin', 'domain2', 'data2', 'read', 'allow'],
+        ['p', 'admin', 'domain2', 'data2', 'write', 'allow'],
+        ['p', 'alice', 'domain2', 'data2', 'write', 'deny'],
+        ['g', 'alice', 'admin', 'domain2', undefined, undefined]
+      ]
+    );
 
     // Clear the current policy.
     await e.clearPolicy();
@@ -623,7 +711,8 @@ describe('MongooseAdapter', () => {
       ['admin', 'domain1', 'data1', 'write', 'allow'],
       ['admin', 'domain2', 'data2', 'read', 'allow'],
       ['admin', 'domain2', 'data2', 'write', 'allow'],
-      ['alice', 'domain2', 'data2', 'write', 'deny']]);
+      ['alice', 'domain2', 'data2', 'write', 'deny']
+    ]);
 
     // Note: you don't need to look at the above code
     // if you already have a working DB with policy inside.
@@ -637,7 +726,8 @@ describe('MongooseAdapter', () => {
       ['admin', 'domain1', 'data1', 'write', 'allow'],
       ['admin', 'domain2', 'data2', 'read', 'allow'],
       ['admin', 'domain2', 'data2', 'write', 'allow'],
-      ['alice', 'domain2', 'data2', 'write', 'deny']]);
+      ['alice', 'domain2', 'data2', 'write', 'deny']
+    ]);
 
     // Add policy to DB
     await a.addPolicy('', 'p', ['role', 'domain', 'res', 'action', 'allow']);
@@ -648,7 +738,8 @@ describe('MongooseAdapter', () => {
       ['admin', 'domain2', 'data2', 'read', 'allow'],
       ['admin', 'domain2', 'data2', 'write', 'allow'],
       ['alice', 'domain2', 'data2', 'write', 'deny'],
-      ['role', 'domain', 'res', 'action', 'allow']]);
+      ['role', 'domain', 'res', 'action', 'allow']
+    ]);
     // Remove policy from DB
     await a.removePolicy('', 'p', ['role', 'domain', 'res', 'action', 'allow']);
     e = await newEnforcer(rbacDenyDomainModel, a);
@@ -657,7 +748,8 @@ describe('MongooseAdapter', () => {
       ['admin', 'domain1', 'data1', 'write', 'allow'],
       ['admin', 'domain2', 'data2', 'read', 'allow'],
       ['admin', 'domain2', 'data2', 'write', 'allow'],
-      ['alice', 'domain2', 'data2', 'write', 'deny']]);
+      ['alice', 'domain2', 'data2', 'write', 'deny']
+    ]);
     // Enforce a rule
     assert.notOk(await e.enforce('alice', 'domain2', 'data2', 'write'));
     assert.ok(await e.enforce('admin', 'domain2', 'data2', 'write'));
@@ -683,19 +775,25 @@ describe('MongooseAdapter', () => {
     // The current policy means the policy in the Node-Casbin enforcer (aka in memory).
     await a.savePolicy(e.getModel());
     let rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
-      ['p', 'admin', 'domain1', 'data1', 'read', 'allow'],
-      ['p', 'admin', 'domain1', 'data1', 'write', 'allow'],
-      ['p', 'admin', 'domain2', 'data2', 'read', 'allow'],
-      ['p', 'admin', 'domain2', 'data2', 'write', 'allow'],
-      ['p', 'alice', 'domain2', 'data2', 'write', 'deny'],
-      ['g', 'alice', 'admin', 'domain2', undefined, undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]),
+      [
+        ['p', 'admin', 'domain1', 'data1', 'read', 'allow'],
+        ['p', 'admin', 'domain1', 'data1', 'write', 'allow'],
+        ['p', 'admin', 'domain2', 'data2', 'read', 'allow'],
+        ['p', 'admin', 'domain2', 'data2', 'write', 'allow'],
+        ['p', 'alice', 'domain2', 'data2', 'write', 'deny'],
+        ['g', 'alice', 'admin', 'domain2', undefined, undefined]
+      ]
+    );
     e = await newEnforcer(rbacDenyDomainModel, a);
-    assert.deepEqual(await e.getPolicy(), [['admin', 'domain1', 'data1', 'read', 'allow'],
+    assert.deepEqual(await e.getPolicy(), [
+      ['admin', 'domain1', 'data1', 'read', 'allow'],
       ['admin', 'domain1', 'data1', 'write', 'allow'],
       ['admin', 'domain2', 'data2', 'read', 'allow'],
       ['admin', 'domain2', 'data2', 'write', 'allow'],
-      ['alice', 'domain2', 'data2', 'write', 'deny']]);
+      ['alice', 'domain2', 'data2', 'write', 'deny']
+    ]);
 
     // Remove 'data2_admin' related policy rules via a filter.
     // Four rules:
@@ -706,18 +804,27 @@ describe('MongooseAdapter', () => {
     // are deleted.
     await a.removeFilteredPolicy(undefined, undefined, 0, 'admin');
     rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
-      ['p', 'alice', 'domain2', 'data2', 'write', 'deny'],
-      ['g', 'alice', 'admin', 'domain2', undefined, undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]),
+      [
+        ['p', 'alice', 'domain2', 'data2', 'write', 'deny'],
+        ['g', 'alice', 'admin', 'domain2', undefined, undefined]
+      ]
+    );
     e = await newEnforcer(rbacDenyDomainModel, a);
     assert.deepEqual(await e.getPolicy(), [['alice', 'domain2', 'data2', 'write', 'deny']]);
     await a.removeFilteredPolicy(undefined, 'g');
     rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
-      ['p', 'alice', 'domain2', 'data2', 'write', 'deny']]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]),
+      [['p', 'alice', 'domain2', 'data2', 'write', 'deny']]
+    );
     await a.removeFilteredPolicy(undefined, 'p');
     rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), []);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]),
+      []
+    );
 
     // Reload the mode + policy
     e = await newEnforcer(rbacDenyDomainModel, rbacDenyDomainPolicy);
@@ -730,14 +837,19 @@ describe('MongooseAdapter', () => {
     // are deleted.
     await a.removeFilteredPolicy(undefined, undefined, 1, 'domain2');
     rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
-      ['p', 'admin', 'domain1', 'data1', 'read', 'allow'],
-      ['p', 'admin', 'domain1', 'data1', 'write', 'allow'],
-      ['g', 'alice', 'admin', 'domain2', undefined, undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]),
+      [
+        ['p', 'admin', 'domain1', 'data1', 'read', 'allow'],
+        ['p', 'admin', 'domain1', 'data1', 'write', 'allow'],
+        ['g', 'alice', 'admin', 'domain2', undefined, undefined]
+      ]
+    );
     e = await newEnforcer(rbacModel, a);
     assert.deepEqual(await e.getPolicy(), [
       ['admin', 'domain1', 'data1', 'read', 'allow'],
-      ['admin', 'domain1', 'data1', 'write', 'allow']]);
+      ['admin', 'domain1', 'data1', 'write', 'allow']
+    ]);
 
     // Remove 'data1' related policy rules via a filter.
     // Two rules:
@@ -746,15 +858,20 @@ describe('MongooseAdapter', () => {
     // are deleted.
     await a.removeFilteredPolicy(undefined, undefined, 2, 'data1');
     rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
-      ['g', 'alice', 'admin', 'domain2', undefined, undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]),
+      [['g', 'alice', 'admin', 'domain2', undefined, undefined]]
+    );
     e = await newEnforcer(rbacDenyDomainModel, a);
     assert.deepEqual(await e.getPolicy(), []);
 
     await a.removeFilteredPolicy(undefined, 'g');
     await a.removeFilteredPolicy(undefined, 'p');
     rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), []);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]),
+      []
+    );
 
     e = await newEnforcer(rbacDenyDomainModel, rbacDenyDomainPolicy);
     await a.savePolicy(e.getModel());
@@ -766,16 +883,21 @@ describe('MongooseAdapter', () => {
     // are deleted.
     await a.removeFilteredPolicy(undefined, undefined, 3, 'read');
     rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
-      ['p', 'admin', 'domain1', 'data1', 'write', 'allow'],
-      ['p', 'admin', 'domain2', 'data2', 'write', 'allow'],
-      ['p', 'alice', 'domain2', 'data2', 'write', 'deny'],
-      ['g', 'alice', 'admin', 'domain2', undefined, undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]),
+      [
+        ['p', 'admin', 'domain1', 'data1', 'write', 'allow'],
+        ['p', 'admin', 'domain2', 'data2', 'write', 'allow'],
+        ['p', 'alice', 'domain2', 'data2', 'write', 'deny'],
+        ['g', 'alice', 'admin', 'domain2', undefined, undefined]
+      ]
+    );
     e = await newEnforcer(rbacDenyDomainModel, a);
     assert.deepEqual(await e.getPolicy(), [
       ['admin', 'domain1', 'data1', 'write', 'allow'],
       ['admin', 'domain2', 'data2', 'write', 'allow'],
-      ['alice', 'domain2', 'data2', 'write', 'deny']]);
+      ['alice', 'domain2', 'data2', 'write', 'deny']
+    ]);
 
     // Remove 'read' related policy rules via a filter.
     // One rule:
@@ -783,14 +905,19 @@ describe('MongooseAdapter', () => {
     // is deleted.
     await a.removeFilteredPolicy(undefined, undefined, 4, 'deny');
     rulesAfter = await CasbinRule.find({});
-    assert.deepEqual(rulesAfter.map(rule => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]), [
-      ['p', 'admin', 'domain1', 'data1', 'write', 'allow'],
-      ['p', 'admin', 'domain2', 'data2', 'write', 'allow'],
-      ['g', 'alice', 'admin', 'domain2', undefined, undefined]]);
+    assert.deepEqual(
+      rulesAfter.map((rule) => [rule.ptype, rule.v0, rule.v1, rule.v2, rule.v3, rule.v4]),
+      [
+        ['p', 'admin', 'domain1', 'data1', 'write', 'allow'],
+        ['p', 'admin', 'domain2', 'data2', 'write', 'allow'],
+        ['g', 'alice', 'admin', 'domain2', undefined, undefined]
+      ]
+    );
     e = await newEnforcer(rbacDenyDomainModel, a);
     assert.deepEqual(await e.getPolicy(), [
       ['admin', 'domain1', 'data1', 'write', 'allow'],
-      ['admin', 'domain2', 'data2', 'write', 'allow']]);
+      ['admin', 'domain2', 'data2', 'write', 'allow']
+    ]);
   });
 
   it('SetSynced should fail in non-replicaset connection', async () => {
