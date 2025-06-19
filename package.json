@@ -1,6 +1,6 @@
 {
   "name": "casbin-mongoose-adapter",
-  "version": "5.3.1",
+  "version": "5.3.2",
   "description": "Mongoose adapter for Casbin",
   "main": "lib/cjs/index.js",
   "typings": "lib/cjs/index.d.ts",
@@ -81,7 +81,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "mongoose": "^8.1.1"
+    "mongoose": "^6.13.2"
   },
   "peerDependencies": {
     "casbin": "^5.28.0"
