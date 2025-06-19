@@ -24,7 +24,7 @@ import {
 import { AdapterError, InvalidAdapterTypeError } from './errors';
 import { collectionName, IModel, modelName, schema } from './model';
 
-type ConnectOptions = ConnectOptions_ & { collectionName?: string }
+type ConnectOptions = ConnectOptions_ & { collectionname?: string }
 export interface MongooseAdapterOptions {
   filtered?: boolean;
   synced?: boolean;
@@ -87,13 +87,13 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     this.isSynced = false;
     this.autoAbort = false;
     this.uri = uri;
-    const { collectionName :o_collectionName ,...options_} = options ??{}
+    const { collectionname :o_collectionname ,...options_} = options ??{}
     this.options = options_;
     this.connection = createConnection(this.uri, this.options);
     this.casbinRule = this.connection.model<IModel>(
-      o_collectionName?? modelName,
-      schema(adapterOptions?.timestamps, options?.collectionName),
-      o_collectionName ?? collectionName
+      o_collectionname?? modelName,
+      schema(adapterOptions?.timestamps, options?.collectionname),
+      o_collectionname ?? collectionName
     );
   }
 
