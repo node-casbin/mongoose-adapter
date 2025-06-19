@@ -16,7 +16,7 @@ import { BatchAdapter, FilteredAdapter, Helper, logPrint, Model, UpdatableAdapte
 import {
   ClientSession,
   Connection,
-  ConnectOptions,
+  ConnectOptions as ConnectOptions_,
   createConnection,
   FilterQuery,
   Model as MongooseModel
@@ -24,6 +24,7 @@ import {
 import { AdapterError, InvalidAdapterTypeError } from './errors';
 import { collectionName, IModel, modelName, schema } from './model';
 
+type ConnectOptions = ConnectOptions_ & { collectionName?: string }
 export interface MongooseAdapterOptions {
   filtered?: boolean;
   synced?: boolean;
@@ -90,8 +91,8 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     this.connection = createConnection(this.uri, this.options);
     this.casbinRule = this.connection.model<IModel>(
       modelName,
-      schema(adapterOptions?.timestamps),
-      collectionName
+      schema(adapterOptions?.timestamps, options?.collectionName),
+      options?.collectionName ?? collectionName
     );
   }
 
