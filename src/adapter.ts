@@ -88,7 +88,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     this.autoAbort = false;
     this.uri = uri;
     const { collectionName :o_collectionName ,...options_} = options ??{}
-    this.options = options;
+    this.options = options_;
     this.connection = createConnection(this.uri, this.options);
     this.casbinRule = this.connection.model<IModel>(
       o_collectionName?? modelName,
