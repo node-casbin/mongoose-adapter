@@ -16,7 +16,7 @@ import { BatchAdapter, FilteredAdapter, Helper, logPrint, Model, UpdatableAdapte
 import {
   ClientSession,
   Connection,
-  ConnectOptions as ConnectOptions_,
+  ConnectOptions,
   createConnection,
   FilterQuery,
   Model as MongooseModel
@@ -24,13 +24,14 @@ import {
 import { AdapterError, InvalidAdapterTypeError } from './errors';
 import { collectionName, IModel, modelName, schema } from './model';
 
-type ConnectOptions = ConnectOptions_ & { collectionname?: string }
+
 export interface MongooseAdapterOptions {
   filtered?: boolean;
   synced?: boolean;
   autoAbort?: boolean;
   autoCommit?: boolean;
   timestamps?: boolean;
+  collectionname?: string,
 }
 
 export interface policyLine {
@@ -87,12 +88,12 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     this.isSynced = false;
     this.autoAbort = false;
     this.uri = uri;
-    const { collectionname :o_collectionname ,...options_} = options ??{}
-    this.options = options_;
+    const { collectionname :o_collectionname} = adapterOptions ??{}
+    this.options = options;
     this.connection = createConnection(this.uri, this.options);
     this.casbinRule = this.connection.model<IModel>(
       o_collectionname?? modelName,
-      schema(adapterOptions?.timestamps, options?.collectionname),
+      schema(adapterOptions?.timestamps, o_collectionname),
       o_collectionname ?? collectionName
     );
   }
