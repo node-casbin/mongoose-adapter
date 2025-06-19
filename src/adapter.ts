@@ -87,12 +87,15 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     this.isSynced = false;
     this.autoAbort = false;
     this.uri = uri;
+
+    const o_collectionName = options?.collectionName;
+    delete options?.collectionName
     this.options = options;
     this.connection = createConnection(this.uri, this.options);
     this.casbinRule = this.connection.model<IModel>(
-      options?.collectionName?? modelName,
+      o_collectionName?? modelName,
       schema(adapterOptions?.timestamps, options?.collectionName),
-      options?.collectionName ?? collectionName
+      o_collectionName ?? collectionName
     );
   }
 
