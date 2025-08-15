@@ -1,3 +1,11 @@
+# [5.4.0](https://github.com/node-casbin/mongoose-adapter/compare/v5.3.1...v5.4.0) (2025-08-15)
+
+
+### Features
+
+* improve README badges ([f703392](https://github.com/node-casbin/mongoose-adapter/commit/f7033927535eeb637cb01dc63dc37b50f6d39676))
+* upgrade mongoose to 8.1.0 and casbin to 5.28.0 ([#76](https://github.com/node-casbin/mongoose-adapter/issues/76)) ([78f5a6a](https://github.com/node-casbin/mongoose-adapter/commit/78f5a6aba836977cef87fa3e0be2d1be123c56a5))
+
 ## [5.3.1](https://github.com/node-casbin/mongoose-adapter/compare/v5.3.0...v5.3.1) (2023-08-06)
 
 
