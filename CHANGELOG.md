@@ -1,3 +1,10 @@
+# [5.6.0](https://github.com/node-casbin/mongoose-adapter/compare/v5.5.0...v5.6.0) (2025-12-09)
+
+
+### Features
+
+* add configurable collection name via adapterOptions ([7db67fa](https://github.com/node-casbin/mongoose-adapter/commit/7db67fa18c1951153cba61f35ec9daff6e827a5b))
+
 # [5.5.0](https://github.com/node-casbin/mongoose-adapter/compare/v5.4.0...v5.5.0) (2025-12-09)
 
 
