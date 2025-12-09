@@ -56,6 +56,37 @@ const adapter = await MongooseAdapter.newAdapter('mongodb://your_mongodb_uri:270
 
 Additional information regard to options you can pass in you can find in [mongoose documentation](https://mongoosejs.com/docs/connections.html#options)
 
+## Migrations
+
+The adapter includes a built-in migration system to handle schema changes safely and reliably. Migrations are automatically checked before the adapter becomes operational.
+
+### Quick Start
+
+```javascript
+const { MongooseAdapter } = require('casbin-mongoose-adapter');
+
+// Create adapter (migrations auto-initialized)
+const adapter = await MongooseAdapter.newAdapter('mongodb://localhost:27017/casbin');
+
+// Run pending migrations
+const count = await adapter.runMigrations();
+console.log(`Applied ${count} migrations`);
+
+// Check migration status
+const status = await adapter.getMigrationStatus();
+```
+
+### Key Features
+
+- **Transaction Support**: Migrations run in transactions when using MongoDB replica sets
+- **Rollback Support**: Every migration can be rolled back with the `down` function
+- **Auto-Check**: The adapter automatically checks migrations before loading policies
+- **Migration Tracking**: All applied migrations are tracked in the `casbin_migrations` collection
+
+### Documentation
+
+For complete migration documentation, examples, and best practices, see [MIGRATIONS.md](./MIGRATIONS.md).
+
 ## Filtered Adapter
 
 You can create an adapter instance that will load only those rules you need to.

@@ -14,7 +14,6 @@
 
 const { assert } = require('chai');
 const { MigrationManager } = require('../../lib/cjs/migration');
-const { MongooseAdapter } = require('../../lib/cjs');
 const { createAdapter } = require('../helpers/helpers');
 
 describe('MigrationManager (Integration Tests)', () => {
