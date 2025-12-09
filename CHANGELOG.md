@@ -1,3 +1,11 @@
+# [5.5.0](https://github.com/node-casbin/mongoose-adapter/compare/v5.4.0...v5.5.0) (2025-12-09)
+
+
+### Features
+
+* fix duplicate CI runs on pull requests ([#83](https://github.com/node-casbin/mongoose-adapter/issues/83)) ([cd799f7](https://github.com/node-casbin/mongoose-adapter/commit/cd799f7d477c1af37e4f4955c80bb7850e7cdab9))
+* upgrade CI scripts' Node.js version to 20 and 22 ([#85](https://github.com/node-casbin/mongoose-adapter/issues/85)) ([ed25ea8](https://github.com/node-casbin/mongoose-adapter/commit/ed25ea87e1ed06b8a9beec858c3d55d5d0374ee9))
+
 # [5.4.0](https://github.com/node-casbin/mongoose-adapter/compare/v5.3.1...v5.4.0) (2025-08-15)
 
 
