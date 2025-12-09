@@ -30,6 +30,7 @@ export interface MongooseAdapterOptions {
   autoAbort?: boolean;
   autoCommit?: boolean;
   timestamps?: boolean;
+  collectionName?: string;
 }
 
 export interface policyLine {
@@ -88,10 +89,11 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     this.uri = uri;
     this.options = options;
     this.connection = createConnection(this.uri, this.options);
+    const customCollectionName = adapterOptions?.collectionName || collectionName;
     this.casbinRule = this.connection.model<IModel>(
       modelName,
-      schema(adapterOptions?.timestamps),
-      collectionName
+      schema(adapterOptions?.timestamps, adapterOptions?.collectionName),
+      customCollectionName
     );
   }
 
