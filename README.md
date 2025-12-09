@@ -56,6 +56,23 @@ const adapter = await MongooseAdapter.newAdapter('mongodb://your_mongodb_uri:270
 
 Additional information regard to options you can pass in you can find in [mongoose documentation](https://mongoosejs.com/docs/connections.html#options)
 
+### Custom Collection Name
+
+By default, the adapter uses `casbin_rule` as the collection name. You can customize this by passing a `collectionName` option in `adapterOptions`:
+
+```javascript
+const { MongooseAdapter } = require('casbin-mongoose-adapter');
+
+// Use custom collection name
+const adapter = await MongooseAdapter.newAdapter(
+  'mongodb://your_mongodb_uri:27017',
+  {},
+  { collectionName: 'casbinRule' }
+);
+```
+
+This allows you to follow your own database naming conventions (e.g., camelCase).
+
 ## Filtered Adapter
 
 You can create an adapter instance that will load only those rules you need to.
