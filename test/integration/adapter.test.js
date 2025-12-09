@@ -19,6 +19,7 @@ const {
   createAdapter,
   createDisconnectedAdapter,
   createSyncedAdapter,
+  createAdapterWithCustomCollectionName,
   basicModel,
   basicPolicy,
   rbacModel,
@@ -1002,5 +1003,28 @@ describe('MongooseAdapter', () => {
     const a2 = await createAdapterWithDBName('node2');
     const e2 = await newEnforcer(rbacModel, a2);
     assert.isFalse(await e2.enforce(...p1), 'Adapter should not share the datasource');
+  });
+
+  it('Should use custom collection name when specified', async () => {
+    const customCollectionName = 'customCasbinRules';
+    const adapter = await createAdapterWithCustomCollectionName(customCollectionName);
+    const enforcer = await newEnforcer(basicModel, adapter);
+    const CasbinRule = adapter.getCasbinRule();
+
+    // Verify the collection name is set correctly
+    assert.equal(CasbinRule.collection.name, customCollectionName);
+
+    // Test that it works end-to-end by adding and retrieving a policy
+    await enforcer.addPolicy('sub', 'obj', 'act');
+    const policies = await enforcer.getPolicy();
+    assert.deepEqual(policies, [['sub', 'obj', 'act']]);
+
+    // Verify the data is actually stored in the custom collection
+    const rules = await CasbinRule.find({ ptype: 'p', v0: 'sub', v1: 'obj', v2: 'act' });
+    assert.equal(rules.length, 1);
+
+    // Clean up
+    await CasbinRule.deleteMany();
+    await adapter.close();
   });
 });

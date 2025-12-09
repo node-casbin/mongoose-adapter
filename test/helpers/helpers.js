@@ -54,12 +54,21 @@ async function createDisconnectedAdapter () {
   return new MongooseAdapter('mongodb://localhost:27001,localhost:27002/casbin?replicaSet=rs0');
 }
 
+async function createAdapterWithCustomCollectionName (collectionName, useTransaction = false) {
+  return MongooseAdapter.newAdapter('mongodb://localhost:27001,localhost:27002/casbin?replicaSet=rs0', {}, {
+    filtered: false,
+    synced: useTransaction,
+    collectionName: collectionName
+  });
+}
+
 module.exports = {
   createEnforcer,
   createAdapter,
   createAdapterWithDBName,
   createSyncedAdapter,
   createDisconnectedAdapter,
+  createAdapterWithCustomCollectionName,
   basicModel,
   basicPolicy,
   rbacModel,

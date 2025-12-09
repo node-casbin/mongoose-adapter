@@ -74,4 +74,28 @@ describe('MongooseAdapter', () => {
     assert.isFunction(adapter.removeFilteredPolicy);
     assert.isFunction(adapter.getCasbinRule);
   });
+
+  it('Should use default collection name when not specified', () => {
+    const adapter = new MongooseAdapter('mongodb://localhost:27001/casbin');
+    const casbinRule = adapter.getCasbinRule();
+
+    // The collection name is set in the schema options
+    assert.equal(casbinRule.schema.options.collection, 'casbin_rule');
+  });
+
+  it('Should use custom collection name when specified in adapterOptions', () => {
+    const adapter = new MongooseAdapter('mongodb://localhost:27001/casbin', {}, { collectionName: 'casbinRule' });
+    const casbinRule = adapter.getCasbinRule();
+
+    // The collection name is set in the schema options
+    assert.equal(casbinRule.schema.options.collection, 'casbinRule');
+  });
+
+  it('Should use custom collection name with newAdapter', async () => {
+    const adapter = await MongooseAdapter.newAdapter('mongodb://localhost:27001/casbin', {}, { collectionName: 'myCustomRules' });
+    const casbinRule = adapter.getCasbinRule();
+
+    // The collection name is set in the schema options
+    assert.equal(casbinRule.schema.options.collection, 'myCustomRules');
+  });
 });
