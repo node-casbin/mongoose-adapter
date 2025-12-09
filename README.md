@@ -70,6 +70,69 @@ const { MongooseAdapter } = require('casbin-mongoose-adapter');
 const adapter = await MongooseAdapter.newFilteredAdapter('mongodb://your_mongodb_uri:27017');
 ```
 
+## Synced Adapter (Transactions)
+
+The Synced Adapter provides transaction support for MongoDB replica sets. This is useful when you need to ensure that multiple policy changes are committed atomically.
+
+**Note:** Transactions require a MongoDB replica set. They will not work with a standalone MongoDB instance.
+
+```javascript
+const { MongooseAdapter } = require('casbin-mongoose-adapter');
+
+// Create a synced adapter with automatic commit and abort
+const adapter = await MongooseAdapter.newSyncedAdapter(
+  'mongodb://your_mongodb_uri:27017?replicaSet=rs0',
+  {},
+  true,  // autoAbort - automatically abort transaction on error
+  true   // autoCommit - automatically commit transaction after each operation
+);
+```
+
+### Manual Transaction Control
+
+You can manually control transactions for more complex scenarios:
+
+```javascript
+const adapter = await MongooseAdapter.newSyncedAdapter(
+  'mongodb://your_mongodb_uri:27017?replicaSet=rs0',
+  {},
+  false,  // autoAbort
+  false   // autoCommit
+);
+
+// Get the current session to perform custom operations
+const session = await adapter.getSession();
+
+// Start a transaction
+await adapter.getTransaction();
+
+// Perform operations...
+await adapter.addPolicy('', 'p', ['alice', 'data1', 'read']);
+await adapter.addPolicy('', 'p', ['bob', 'data2', 'write']);
+
+// You can also perform custom operations with the session
+const CasbinRule = adapter.getCasbinRule();
+await CasbinRule.collection.insertOne(
+  { ptype: 'p', v0: 'charlie', v1: 'data3', v2: 'write' },
+  { session }
+);
+
+// Commit the transaction
+await adapter.commitTransaction();
+
+// Or abort if something went wrong
+// await adapter.abortTransaction();
+```
+
+### Session Lifecycle
+
+The adapter properly manages MongoDB session lifecycle:
+
+- Sessions are automatically created when starting a transaction
+- Sessions are automatically ended after `commitTransaction()` or `abortTransaction()`
+- In autoCommit/autoAbort mode, sessions are ended after each operation
+- You can access the current session using `getSession()` to perform custom operations
+
 ## License
 
 [Apache-2.0](./LICENSE)
