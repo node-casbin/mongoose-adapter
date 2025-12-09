@@ -60,7 +60,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
   private options?: ConnectOptions;
   private autoAbort: boolean;
   private autoCommit: boolean;
-  private session: ClientSession;
+  private session?: ClientSession;
   private casbinRule: MongooseModel<IModel>;
 
   /**
@@ -283,7 +283,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       const session = await this.getSession();
       await session.commitTransaction();
       await session.endSession();
-      this.session = undefined as any;
+      this.session = undefined;
     } else
       throw new InvalidAdapterTypeError(
         'Transactions are only supported by SyncedAdapter. See newSyncedAdapter'
@@ -300,7 +300,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       const session = await this.getSession();
       await session.abortTransaction();
       await session.endSession();
-      this.session = undefined as any;
+      this.session = undefined;
       logPrint('Transaction aborted');
     } else
       throw new InvalidAdapterTypeError(
@@ -364,7 +364,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     if (this.autoCommit && options.session) {
       await options.session.commitTransaction();
       await options.session.endSession();
-      this.session = undefined as any;
+      this.session = undefined;
     }
     for (const line of lines) {
       this.loadPolicyLine(line, model);
@@ -447,13 +447,13 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       if (this.autoCommit && options.session) {
         await options.session.commitTransaction();
         await options.session.endSession();
-        this.session = undefined as any;
+        this.session = undefined;
       }
     } catch (err) {
       if (this.autoAbort && options.session) {
         await options.session.abortTransaction();
         await options.session.endSession();
-        this.session = undefined as any;
+        this.session = undefined;
       }
       console.error(err);
       return false;
@@ -482,13 +482,13 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       if (this.autoCommit && options.session) {
         await options.session.commitTransaction();
         await options.session.endSession();
-        this.session = undefined as any;
+        this.session = undefined;
       }
     } catch (err) {
       if (this.autoAbort && options.session) {
         await options.session.abortTransaction();
         await options.session.endSession();
-        this.session = undefined as any;
+        this.session = undefined;
       }
       throw err;
     }
@@ -517,13 +517,13 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       if (this.autoCommit && options.session) {
         await options.session.commitTransaction();
         await options.session.endSession();
-        this.session = undefined as any;
+        this.session = undefined;
       }
     } catch (err) {
       if (this.autoAbort && options.session) {
         await options.session.abortTransaction();
         await options.session.endSession();
-        this.session = undefined as any;
+        this.session = undefined;
       }
       throw err;
     }
@@ -565,13 +565,13 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       if (this.autoCommit && options.session) {
         await options.session.commitTransaction();
         await options.session.endSession();
-        this.session = undefined as any;
+        this.session = undefined;
       }
     } catch (err) {
       if (this.autoAbort && options.session) {
         await options.session.abortTransaction();
         await options.session.endSession();
-        this.session = undefined as any;
+        this.session = undefined;
       }
       throw err;
     }
@@ -598,13 +598,13 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       if (this.autoCommit && options.session) {
         await options.session.commitTransaction();
         await options.session.endSession();
-        this.session = undefined as any;
+        this.session = undefined;
       }
     } catch (err) {
       if (this.autoAbort && options.session) {
         await options.session.abortTransaction();
         await options.session.endSession();
-        this.session = undefined as any;
+        this.session = undefined;
       }
       throw err;
     }
@@ -634,13 +634,13 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       if (this.autoCommit && options.session) {
         await options.session.commitTransaction();
         await options.session.endSession();
-        this.session = undefined as any;
+        this.session = undefined;
       }
     } catch (err) {
       if (this.autoAbort && options.session) {
         await options.session.abortTransaction();
         await options.session.endSession();
-        this.session = undefined as any;
+        this.session = undefined;
       }
       throw err;
     }
@@ -700,13 +700,13 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       if (this.autoCommit && options.session) {
         await options.session.commitTransaction();
         await options.session.endSession();
-        this.session = undefined as any;
+        this.session = undefined;
       }
     } catch (err) {
       if (this.autoAbort && options.session) {
         await options.session.abortTransaction();
         await options.session.endSession();
-        this.session = undefined as any;
+        this.session = undefined;
       }
       throw err;
     }
