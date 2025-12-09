@@ -101,6 +101,8 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     );
 
     // Initialize migration manager
+    // Note: Migration manager uses this.isSynced to determine transaction support
+    // This will be updated by setSynced() when using newSyncedAdapter()
     if (!this.skipMigrations) {
       this.migrationManager = new MigrationManager(this.connection, this.isSynced);
       this.migrationManager.registerMigrations(allMigrations);
@@ -212,6 +214,11 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    */
   setSynced(synced: boolean = true) {
     this.isSynced = synced;
+    // Update migration manager transaction support if it exists
+    if (this.migrationManager) {
+      this.migrationManager = new MigrationManager(this.connection!, synced);
+      this.migrationManager.registerMigrations(allMigrations);
+    }
   }
 
   /**

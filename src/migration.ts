@@ -257,16 +257,15 @@ export class MigrationManager {
 
   /**
    * Check if the connection supports transactions (replica set required)
-   * @returns True if transactions are supported
+   * Note: This is a simplified check. Actual transaction support is verified
+   * when starting a transaction, which will fail if not supported.
+   * @returns True (assumes transactions are supported; actual check happens at runtime)
    */
   private supportsTransactions(): boolean {
-    // Check if connection is to a replica set
-    const db = this.connection.db;
-    if (!db) return false;
-
-    // MongoDB transactions require replica sets or sharded clusters
-    // We check if the connection string includes replicaSet or if we're connected to multiple hosts
-    return true; // Assume support; actual check happens when starting transaction
+    // Transactions require MongoDB replica sets or sharded clusters
+    // The actual capability check happens when startSession/startTransaction is called
+    // which will throw an error if transactions are not supported
+    return true;
   }
 
   /**

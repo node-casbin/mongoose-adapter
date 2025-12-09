@@ -215,9 +215,13 @@ async function example5IntegrationWithEnforcer () {
   const adapter = await MongooseAdapter.newAdapter('mongodb://localhost:27017/casbin');
 
   try {
-    // When you create an enforcer, migrations are automatically checked
-    // during loadPolicy()
-    const enforcer = await newEnforcer('./model.conf', adapter);
+    // NOTE: You need to create a model.conf file or use an absolute path
+    // Example: const modelPath = path.resolve(__dirname, '../test/fixtures/basic_model.conf');
+    // For this example to work, create a model.conf in the current directory
+    // or update the path to an existing model file
+
+    const modelPath = './model.conf'; // Update this path as needed
+    const enforcer = await newEnforcer(modelPath, adapter);
 
     console.log('Enforcer created successfully!');
     console.log('Migrations were automatically verified during initialization');
@@ -231,6 +235,9 @@ async function example5IntegrationWithEnforcer () {
       console.error('Error: There are pending migrations!');
       console.error('Please run migrations first:');
       console.error('  await adapter.runMigrations();');
+    } else if (error.message.includes('ENOENT')) {
+      console.error('Error: Model file not found.');
+      console.error('Please create a model.conf file or update the path in the example.');
     } else {
       throw error;
     }
