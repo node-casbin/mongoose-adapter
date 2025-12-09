@@ -23,6 +23,8 @@ import {
 } from 'mongoose';
 import { AdapterError, InvalidAdapterTypeError } from './errors';
 import { collectionName, IModel, modelName, schema } from './model';
+import { MigrationManager } from './migration';
+import { allMigrations } from './migrations';
 
 export interface MongooseAdapterOptions {
   filtered?: boolean;
@@ -30,6 +32,7 @@ export interface MongooseAdapterOptions {
   autoAbort?: boolean;
   autoCommit?: boolean;
   timestamps?: boolean;
+  skipMigrations?: boolean;
 }
 
 export interface policyLine {
@@ -53,6 +56,7 @@ export interface sessionOption {
  */
 export class MongooseAdapter implements BatchAdapter, FilteredAdapter, UpdatableAdapter {
   public connection?: Connection;
+  public migrationManager?: MigrationManager;
 
   private filtered: boolean;
   private isSynced: boolean;
@@ -62,6 +66,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
   private autoCommit: boolean;
   private session: ClientSession;
   private casbinRule: MongooseModel<IModel>;
+  private skipMigrations: boolean;
 
   /**
    * Creates a new instance of mongoose adapter for casbin.
@@ -85,6 +90,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     this.filtered = false;
     this.isSynced = false;
     this.autoAbort = false;
+    this.skipMigrations = adapterOptions?.skipMigrations || false;
     this.uri = uri;
     this.options = options;
     this.connection = createConnection(this.uri, this.options);
@@ -93,6 +99,12 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       schema(adapterOptions?.timestamps),
       collectionName
     );
+
+    // Initialize migration manager
+    if (!this.skipMigrations) {
+      this.migrationManager = new MigrationManager(this.connection, this.isSynced);
+      this.migrationManager.registerMigrations(allMigrations);
+    }
   }
 
   /**
@@ -334,6 +346,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * @returns {Promise<void>}
    */
   async loadPolicy(model: Model): Promise<void> {
+    await this.ensureMigrations();
     return this.loadFilteredPolicy(model, null);
   }
 
@@ -345,6 +358,7 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    * @param {Object} [filter] MongoDB filter to query
    */
   async loadFilteredPolicy(model: Model, filter: FilterQuery<IModel> | null) {
+    await this.ensureMigrations();
     if (filter) {
       this.setFiltered(true);
     } else {
@@ -644,6 +658,51 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       this.autoAbort && options.session && (await options.session.abortTransaction());
       throw err;
     }
+  }
+
+  /**
+   * Run all pending migrations
+   * @returns Number of migrations executed
+   */
+  async runMigrations(): Promise<number> {
+    if (this.skipMigrations || !this.migrationManager) {
+      throw new AdapterError('Migrations are disabled for this adapter');
+    }
+    return await this.migrationManager.up();
+  }
+
+  /**
+   * Rollback the last applied migration
+   * @returns True if a migration was rolled back, false if none to rollback
+   */
+  async rollbackMigration(): Promise<boolean> {
+    if (this.skipMigrations || !this.migrationManager) {
+      throw new AdapterError('Migrations are disabled for this adapter');
+    }
+    return await this.migrationManager.down();
+  }
+
+  /**
+   * Get the status of all migrations
+   * @returns Array of migration statuses
+   */
+  async getMigrationStatus(): Promise<Array<{ id: string; description: string; applied: boolean }>> {
+    if (this.skipMigrations || !this.migrationManager) {
+      throw new AdapterError('Migrations are disabled for this adapter');
+    }
+    return await this.migrationManager.getStatus();
+  }
+
+  /**
+   * Ensure all migrations have been applied
+   * This is called automatically before adapter operations unless skipMigrations is true
+   * @throws Error if there are pending migrations
+   */
+  async ensureMigrations(): Promise<void> {
+    if (this.skipMigrations || !this.migrationManager) {
+      return;
+    }
+    await this.migrationManager.ensureMigrations();
   }
 
   async close() {
