@@ -227,9 +227,11 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
    */
   async getSession(): Promise<ClientSession> {
     if (this.isSynced) {
-      return this.session && this.session.inTransaction()
-        ? this.session
-        : this.connection!.startSession();
+      if (this.session && this.session.inTransaction()) {
+        return this.session;
+      }
+      this.session = await this.connection!.startSession();
+      return this.session;
     } else
       throw new InvalidAdapterTypeError(
         'Transactions are only supported by SyncedAdapter. See newSyncedAdapter'
@@ -280,6 +282,8 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     if (this.isSynced) {
       const session = await this.getSession();
       await session.commitTransaction();
+      await session.endSession();
+      this.session = undefined as any;
     } else
       throw new InvalidAdapterTypeError(
         'Transactions are only supported by SyncedAdapter. See newSyncedAdapter'
@@ -295,6 +299,8 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
     if (this.isSynced) {
       const session = await this.getSession();
       await session.abortTransaction();
+      await session.endSession();
+      this.session = undefined as any;
       logPrint('Transaction aborted');
     } else
       throw new InvalidAdapterTypeError(
@@ -355,7 +361,11 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
 
     const lines = await this.casbinRule.find(filter || {}, null, options).lean();
 
-    this.autoCommit && options.session && (await options.session.commitTransaction());
+    if (this.autoCommit && options.session) {
+      await options.session.commitTransaction();
+      await options.session.endSession();
+      this.session = undefined as any;
+    }
     for (const line of lines) {
       this.loadPolicyLine(line, model);
     }
@@ -434,9 +444,17 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
 
       await this.casbinRule.collection.insertMany(lines, options);
 
-      this.autoCommit && options.session && (await options.session.commitTransaction());
+      if (this.autoCommit && options.session) {
+        await options.session.commitTransaction();
+        await options.session.endSession();
+        this.session = undefined as any;
+      }
     } catch (err) {
-      this.autoAbort && options.session && (await options.session.abortTransaction());
+      if (this.autoAbort && options.session) {
+        await options.session.abortTransaction();
+        await options.session.endSession();
+        this.session = undefined as any;
+      }
       console.error(err);
       return false;
     }
@@ -461,9 +479,17 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       const line = this.savePolicyLine(pType, rule);
       await line.save(options);
 
-      this.autoCommit && options.session && (await options.session.commitTransaction());
+      if (this.autoCommit && options.session) {
+        await options.session.commitTransaction();
+        await options.session.endSession();
+        this.session = undefined as any;
+      }
     } catch (err) {
-      this.autoAbort && options.session && (await options.session.abortTransaction());
+      if (this.autoAbort && options.session) {
+        await options.session.abortTransaction();
+        await options.session.endSession();
+        this.session = undefined as any;
+      }
       throw err;
     }
   }
@@ -488,9 +514,17 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       const promises = rules.map(async (rule) => this.addPolicy(sec, pType, rule));
       await Promise.all(promises);
 
-      this.autoCommit && options.session && (await options.session.commitTransaction());
+      if (this.autoCommit && options.session) {
+        await options.session.commitTransaction();
+        await options.session.endSession();
+        this.session = undefined as any;
+      }
     } catch (err) {
-      this.autoAbort && options.session && (await options.session.abortTransaction());
+      if (this.autoAbort && options.session) {
+        await options.session.abortTransaction();
+        await options.session.endSession();
+        this.session = undefined as any;
+      }
       throw err;
     }
   }
@@ -528,9 +562,17 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
 
       await this.casbinRule.updateOne({ ptype, v0, v1, v2, v3, v4, v5 }, newModel, options);
 
-      this.autoCommit && options.session && (await options.session.commitTransaction());
+      if (this.autoCommit && options.session) {
+        await options.session.commitTransaction();
+        await options.session.endSession();
+        this.session = undefined as any;
+      }
     } catch (err) {
-      this.autoAbort && options.session && (await options.session.abortTransaction());
+      if (this.autoAbort && options.session) {
+        await options.session.abortTransaction();
+        await options.session.endSession();
+        this.session = undefined as any;
+      }
       throw err;
     }
   }
@@ -553,9 +595,17 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
 
       await this.casbinRule.deleteMany({ ptype, v0, v1, v2, v3, v4, v5 }, options);
 
-      this.autoCommit && options.session && (await options.session.commitTransaction());
+      if (this.autoCommit && options.session) {
+        await options.session.commitTransaction();
+        await options.session.endSession();
+        this.session = undefined as any;
+      }
     } catch (err) {
-      this.autoAbort && options.session && (await options.session.abortTransaction());
+      if (this.autoAbort && options.session) {
+        await options.session.abortTransaction();
+        await options.session.endSession();
+        this.session = undefined as any;
+      }
       throw err;
     }
   }
@@ -581,9 +631,17 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
       const promises = rules.map(async (rule) => this.removePolicy(sec, pType, rule));
       await Promise.all(promises);
 
-      this.autoCommit && options.session && (await options.session.commitTransaction());
+      if (this.autoCommit && options.session) {
+        await options.session.commitTransaction();
+        await options.session.endSession();
+        this.session = undefined as any;
+      }
     } catch (err) {
-      this.autoAbort && options.session && (await options.session.abortTransaction());
+      if (this.autoAbort && options.session) {
+        await options.session.abortTransaction();
+        await options.session.endSession();
+        this.session = undefined as any;
+      }
       throw err;
     }
   }
@@ -639,9 +697,17 @@ export class MongooseAdapter implements BatchAdapter, FilteredAdapter, Updatable
 
       await this.casbinRule.deleteMany(where, options);
 
-      this.autoCommit && options.session && (await options.session.commitTransaction());
+      if (this.autoCommit && options.session) {
+        await options.session.commitTransaction();
+        await options.session.endSession();
+        this.session = undefined as any;
+      }
     } catch (err) {
-      this.autoAbort && options.session && (await options.session.abortTransaction());
+      if (this.autoAbort && options.session) {
+        await options.session.abortTransaction();
+        await options.session.endSession();
+        this.session = undefined as any;
+      }
       throw err;
     }
   }
