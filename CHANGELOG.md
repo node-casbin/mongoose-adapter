@@ -1,3 +1,10 @@
+## [5.6.1](https://github.com/node-casbin/mongoose-adapter/compare/v5.6.0...v5.6.1) (2026-01-04)
+
+
+### Bug Fixes
+
+* remove codebeat badge from README ([a0f1ad3](https://github.com/node-casbin/mongoose-adapter/commit/a0f1ad331e8dec0eab399d87c6036982810e2605))
+
 # [5.6.0](https://github.com/node-casbin/mongoose-adapter/compare/v5.5.0...v5.6.0) (2025-12-09)
 
 

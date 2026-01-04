@@ -1,6 +1,6 @@
 {
   "name": "casbin-mongoose-adapter",
-  "version": "5.6.0",
+  "version": "5.6.1",
   "description": "Mongoose adapter for Casbin",
   "main": "lib/cjs/index.js",
   "typings": "lib/cjs/index.d.ts",
